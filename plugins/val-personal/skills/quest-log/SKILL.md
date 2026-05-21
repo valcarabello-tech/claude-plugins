@@ -376,16 +376,30 @@ Make it recognizable — the user should know which real project it maps to.
   .reward-banner.show{display:block;}
   @keyframes glow-pulse{0%,100%{box-shadow:0 0 20px rgba(251,191,36,.3)}50%{box-shadow:0 0 40px rgba(251,191,36,.6),0 0 60px rgba(78,205,196,.3)}}
   .reward-text{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--gold-light);line-height:1.6;}
-  .levelup-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(13,10,26,.85);backdrop-filter:blur(4px);align-items:center;justify-content:center;flex-direction:column;gap:12px;animation:fadein .3s ease;}
+  #flash{position:fixed;inset:0;pointer-events:none;z-index:850;opacity:0;background:radial-gradient(ellipse at center,rgba(251,191,36,.5),rgba(124,92,191,.3));transition:opacity .08s;}
+  #flash.pop{opacity:1;}
+  @keyframes shake{0%,100%{transform:translate(0,0) rotate(0deg);}10%{transform:translate(-6px,3px) rotate(-.5deg);}20%{transform:translate(6px,-3px) rotate(.5deg);}30%{transform:translate(-4px,4px) rotate(-.3deg);}40%{transform:translate(4px,-2px) rotate(.3deg);}50%{transform:translate(-3px,3px) rotate(-.2deg);}60%{transform:translate(3px,-1px) rotate(.2deg);}70%{transform:translate(-2px,2px) rotate(-.1deg);}80%{transform:translate(2px,-1px) rotate(.1deg);}90%{transform:translate(-1px,1px) rotate(0deg);}}
+  body.shaking{animation:shake .5s ease-out;}
+  .emoji-burst{position:fixed;pointer-events:none;z-index:910;font-size:1.6rem;animation:emoji-fly var(--dur,.8s) ease-out forwards;}
+  @keyframes emoji-fly{0%{opacity:1;transform:translate(0,0) scale(1) rotate(0deg);}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.4) rotate(var(--rot));}}
+  .levelup-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(13,10,26,.85);backdrop-filter:blur(6px);align-items:center;justify-content:center;flex-direction:column;gap:12px;animation:fadein .3s ease;}
   .levelup-overlay.show{display:flex;}
   @keyframes fadein{from{opacity:0}to{opacity:1}}
-  .levelup-box{background:linear-gradient(135deg,#2d1b69,#1a3a3a);border:2px solid var(--gold);border-radius:20px;padding:40px 56px;text-align:center;animation:levelup-pop .4s cubic-bezier(.175,.885,.32,1.275);box-shadow:0 0 60px rgba(251,191,36,.4),0 0 120px rgba(124,92,191,.3);}
-  @keyframes levelup-pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
-  .levelup-title{font-family:'Cinzel',serif;font-size:2rem;font-weight:700;color:var(--gold);margin-bottom:8px;letter-spacing:.08em;}
-  .levelup-sub{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--gold-light);margin-bottom:4px;}
-  .levelup-rank{font-size:1.4rem;color:var(--xp-color);font-weight:700;margin:8px 0;}
-  .levelup-dismiss{margin-top:20px;font-size:.8rem;color:var(--text-muted);cursor:pointer;text-transform:uppercase;letter-spacing:.1em;}
-  .levelup-dismiss:hover{color:var(--text);}
+  .levelup-box{background:linear-gradient(135deg,#2d1b69,#1a3a3a);border:2px solid var(--gold);border-radius:20px;padding:40px 56px;text-align:center;animation:levelup-pop .45s cubic-bezier(.175,.885,.32,1.275);box-shadow:0 0 80px rgba(251,191,36,.45),0 0 160px rgba(124,92,191,.3);position:relative;overflow:hidden;}
+  @keyframes levelup-pop{from{transform:scale(.6) rotate(-3deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
+  .box-sparkles{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .box-spark{position:absolute;width:4px;height:4px;border-radius:50%;animation:box-spark-anim var(--d,1.5s) ease-out var(--delay,0s) infinite;}
+  @keyframes box-spark-anim{0%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(0);}30%{opacity:1;transform:translate(calc(var(--sx)*1.4),calc(var(--sy)*1.4)) scale(1);}100%{opacity:0;transform:translate(calc(var(--sx)*2.5),calc(var(--sy)*2.5)) scale(0);}}
+  .levelup-title{font-family:'Cinzel',serif;font-size:2rem;font-weight:700;color:var(--gold);margin-bottom:6px;letter-spacing:.08em;text-shadow:0 0 30px rgba(251,191,36,.8);}
+  .levelup-stars{font-size:1.6rem;margin:4px 0 10px;letter-spacing:8px;animation:star-pulse 1s ease-in-out infinite alternate;}
+  @keyframes star-pulse{from{filter:brightness(1)}to{filter:brightness(1.5) drop-shadow(0 0 8px gold)}}
+  .levelup-sub{font-family:'Cinzel',serif;font-size:1rem;color:var(--gold-light);margin-bottom:4px;}
+  .levelup-rank{font-size:1.4rem;color:var(--xp-color);font-weight:700;margin:8px 0;animation:rank-glow 1.5s ease-in-out infinite alternate;}
+  @keyframes rank-glow{from{text-shadow:0 0 10px rgba(167,139,250,.5)}to{text-shadow:0 0 30px rgba(167,139,250,1),0 0 60px rgba(167,139,250,.5)}}
+  .levelup-dismiss{margin-top:20px;font-size:.8rem;color:var(--text-muted);cursor:pointer;text-transform:uppercase;letter-spacing:.1em;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 20px;display:inline-block;transition:all .2s;}
+  .levelup-dismiss:hover{background:rgba(255,255,255,.08);color:var(--text);}
+  @keyframes badge-pop{0%{transform:scale(1)}40%{transform:scale(1.4) rotate(10deg)}70%{transform:scale(.9) rotate(-5deg)}100%{transform:scale(1) rotate(0deg)}}
+  .level-badge.popping{animation:badge-pop .5s cubic-bezier(.175,.885,.32,1.275);}
   .xp-float{position:fixed;pointer-events:none;z-index:999;font-family:'Cinzel',serif;font-weight:700;font-size:.85rem;color:var(--xp-color);text-shadow:0 0 8px rgba(167,139,250,.8);animation:xp-rise 1.2s ease-out forwards;}
   @keyframes xp-rise{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-60px) scale(.8)}}
   .quest-card{background:var(--bg-card);border:1px solid rgba(124,92,191,.25);border-radius:16px;margin-bottom:14px;overflow:hidden;transition:border-color .3s,box-shadow .3s;}
@@ -434,13 +448,17 @@ Make it recognizable — the user should know which real project it maps to.
 </style>
 </head>
 <body>
+<canvas id="confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:900;"></canvas>
+<div id="flash"></div>
 <div class="stars" id="stars"></div>
 <div class="levelup-overlay" id="levelup-overlay">
   <div class="levelup-box">
+    <div class="box-sparkles" id="box-sparkles"></div>
     <div class="levelup-title">⚔️ LEVEL UP! ⚔️</div>
+    <div class="levelup-stars">✨ 💎 ✨ 💎 ✨</div>
     <div class="levelup-sub">You have ascended to</div>
     <div class="levelup-rank" id="levelup-rank"></div>
-    <div style="color:var(--text-muted);font-size:.85rem;margin-top:8px" id="levelup-flavor"></div>
+    <div style="color:var(--text-muted);font-size:.85rem;margin-top:6px;font-style:italic;" id="levelup-flavor"></div>
     <div class="levelup-dismiss" onclick="document.getElementById('levelup-overlay').classList.remove('show')">[ tap to continue your quest ]</div>
   </div>
 </div>
@@ -511,7 +529,15 @@ localStorage.setItem('qlq-week-key',WEEK_KEY);
 function save(){localStorage.setItem('qlq-checked',JSON.stringify(checked));localStorage.setItem('qlq-open',JSON.stringify(openState));localStorage.setItem('qlq-total-xp',totalXp);localStorage.setItem('qlq-weekly-xp',weeklyXp);localStorage.setItem('qlq-quest-bonuses',JSON.stringify(questBonuses));localStorage.setItem('qlq-all-bonus',allBonus);localStorage.setItem('qlq-total-quests',totalQuestsCompleted);}
 function awardXp(amt,el){const prev=getLevelData(totalXp).current.level;totalXp+=amt;weeklyXp+=amt;save();if(getLevelData(totalXp).current.level>prev)showLevelUp(getLevelData(totalXp).current.level);if(el)floatXp('+'+amt+' XP',el);}
 function floatXp(text,el){const r=el.getBoundingClientRect();const d=document.createElement('div');d.className='xp-float';d.textContent=text;d.style.left=(r.left+r.width/2-20)+'px';d.style.top=(r.top+window.scrollY-10)+'px';document.body.appendChild(d);setTimeout(()=>d.remove(),1300);}
-function showLevelUp(lv){const ld=LEVELS.find(l=>l.level===lv)||LEVELS[LEVELS.length-1];document.getElementById('levelup-rank').textContent='Level '+lv+' — '+ld.title;document.getElementById('levelup-flavor').textContent=ld.flavor;document.getElementById('levelup-overlay').classList.add('show');}
+const _cvs=document.getElementById('confetti-canvas'),_ctx=_cvs.getContext('2d');let _p=[],_aId=null;function _rsz(){_cvs.width=window.innerWidth;_cvs.height=window.innerHeight;}_rsz();window.addEventListener('resize',_rsz);const _CL=['#fbbf24','#fde68a','#4ecdc4','#a78bfa','#7c5cbf','#2a9d8f','#f9a8d4'];function _spawnC(n=180){const cx=window.innerWidth/2,cy=window.innerHeight/3;for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,sp=4+Math.random()*14;_p.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-(Math.random()*4),color:_CL[Math.floor(Math.random()*_CL.length)],shape:['circle','rect','star'][Math.floor(Math.random()*3)],size:4+Math.random()*8,rot:Math.random()*Math.PI*2,rotV:(Math.random()-.5)*.3,life:1,decay:.012+Math.random()*.012,gravity:.25+Math.random()*.2});}}
+function _dStar(x,y,r){_ctx.beginPath();for(let i=0;i<5;i++){const a=(i*4*Math.PI/5)-Math.PI/2,b=((i*4+2)*Math.PI/5)-Math.PI/2;_ctx.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);_ctx.lineTo(x+Math.cos(b)*r*.4,y+Math.sin(b)*r*.4);}_ctx.closePath();}
+function _aC(){_ctx.clearRect(0,0,_cvs.width,_cvs.height);_p=_p.filter(p=>p.life>0);for(const p of _p){_ctx.save();_ctx.globalAlpha=p.life;_ctx.fillStyle=p.color;_ctx.translate(p.x,p.y);_ctx.rotate(p.rot);if(p.shape==='circle'){_ctx.beginPath();_ctx.arc(0,0,p.size/2,0,Math.PI*2);_ctx.fill();}else if(p.shape==='rect'){_ctx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);}else{_dStar(0,0,p.size/2);_ctx.fill();}_ctx.restore();p.x+=p.vx;p.y+=p.vy;p.vy+=p.gravity;p.vx*=.99;p.rot+=p.rotV;p.life-=p.decay;}if(_p.length>0)_aId=requestAnimationFrame(_aC);else _ctx.clearRect(0,0,_cvs.width,_cvs.height);}
+const _EM=['⚔️','✨','💎','🌟','🏆','🔮','🌙','⭐','🗡️','💫'];function _eB(){const badge=document.getElementById('char-level').closest('.level-badge')||document.body;const rect=badge.getBoundingClientRect();const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;for(let i=0;i<16;i++){const el=document.createElement('div');el.className='emoji-burst';el.textContent=_EM[Math.floor(Math.random()*_EM.length)];const angle=(i/16)*Math.PI*2+(Math.random()-.5)*.4,dist=120+Math.random()*180,tx=Math.cos(angle)*dist,ty=Math.sin(angle)*dist-60;el.style.cssText=`left:${cx}px;top:${cy}px;--tx:${tx}px;--ty:${ty}px;--dur:${.6+Math.random()*.5}s;--rot:${(Math.random()-.5)*720}deg;`;document.body.appendChild(el);setTimeout(()=>el.remove(),1200);}}
+function _flash(){const f=document.getElementById('flash');f.classList.add('pop');setTimeout(()=>f.classList.remove('pop'),120);}
+function _shake(){document.body.classList.add('shaking');setTimeout(()=>document.body.classList.remove('shaking'),500);}
+function _bSparks(){const c=document.getElementById('box-sparkles');c.innerHTML='';for(let i=0;i<20;i++){const s=document.createElement('div');s.className='box-spark';const a=Math.random()*Math.PI*2,r=30+Math.random()*20;s.style.cssText=`left:50%;top:50%;--sx:${Math.cos(a)*r}px;--sy:${Math.sin(a)*r}px;--d:${1+Math.random()}s;--delay:${Math.random()}s;background:${_CL[Math.floor(Math.random()*_CL.length)]}`;c.appendChild(s);}}
+function _badgePop(lv){const badge=document.getElementById('char-level').closest('.level-badge');if(!badge)return;badge.classList.remove('popping');void badge.offsetWidth;document.getElementById('char-level').textContent=lv;badge.classList.add('popping');setTimeout(()=>badge.classList.remove('popping'),500);}
+function showLevelUp(lv){const ld=LEVELS.find(l=>l.level===lv)||LEVELS[LEVELS.length-1];document.getElementById('levelup-rank').textContent='Level '+lv+' — '+ld.title;document.getElementById('levelup-flavor').textContent=ld.flavor;_flash();setTimeout(_shake,50);setTimeout(_eB,80);setTimeout(_eB,300);_spawnC(200);if(_aId)cancelAnimationFrame(_aId);_aC();setTimeout(()=>_badgePop(lv),300);_bSparks();setTimeout(()=>document.getElementById('levelup-overlay').classList.add('show'),600);}
 function countItems(q){let t=0,d=0;for(const i of q.tasks){if(i.subtasks){for(const s of i.subtasks){t++;if(checked[s.id])d++;}}else{t++;if(checked[i.id])d++;}}return{total:t,done:d};}
 function allSubsDone(t){return t.subtasks&&t.subtasks.every(s=>checked[s.id]);}
 function questXpValue(q){let xp=0;for(const t of q.tasks){if(t.subtasks)xp+=t.subtasks.length*XP_SUBTASK;else xp+=XP_TASK;}return xp+XP_QUEST;}
