@@ -1,0 +1,24 @@
+{
+  "name": "val-plugins",
+  "owner": {
+    "name": "Val Carabello",
+    "email": "val.carabello@grafana.com"
+  },
+  "metadata": {
+    "description": "Val's personal Claude Code plugin collection",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "val-personal",
+      "source": "./plugins/val-personal",
+      "description": "Val's personal productivity skills — quest log + ADHD executive function toolkit",
+      "version": "1.4.0",
+      "author": {
+        "name": "Val Carabello",
+        "email": "val.carabello@grafana.com"
+      },
+      "license": "MIT"
+    }
+  ]
+}
