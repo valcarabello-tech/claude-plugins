@@ -14,7 +14,7 @@ A Claude Code skill that turns your weekly to-do list into a DnD/LARP-themed int
 ## Install
 
 ```bash
-git clone https://github.com/valcarabello-tech/quest-log ~/quest-log
+git clone -b quest-log https://github.com/valcarabello-tech/claude-plugins ~/quest-log
 claude plugin install ~/quest-log
 ```
 
