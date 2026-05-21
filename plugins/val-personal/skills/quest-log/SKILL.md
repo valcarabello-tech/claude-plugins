@@ -3,6 +3,12 @@ name: quest-log
 description: Weekly quest log generator. Creates a personalized DnD/LARP/wizard-themed interactive quest log as a native macOS desktop app. Trigger this skill when the user says /quest-log, "make my quest log", "generate my quest log", "weekly quest log", "turn my to-do list into quests", or pastes a to-do list and wants it gamified. Also triggers on the weekly update phrase "roll for initiative" — use this to refresh the quest log with a new week's tasks.
 ---
 
+> 🔔 **MAINTAINER REMINDER — FOR CLAUDE:** This skill lives in two places. Whenever Val updates this file, remind her to run the sync script so coworkers get the changes too:
+> ```bash
+> bash ~/claude-plugins/scripts/sync-quest-log.sh
+> ```
+> This copies the updated SKILL.md from `main` → the shareable `quest-log` branch and pushes it. Don't let her forget!
+
 # ⚔️ Quest Log — Setup & Weekly Ritual
 
 This skill does two things:
