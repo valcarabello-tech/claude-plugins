@@ -427,6 +427,18 @@ Short, operational. Real project name + action category. Examples: "Wayfinder In
   .subtask-text{font-size:.78rem;color:var(--text-muted);line-height:1.4;flex:1;}
   .subtask-item.done .subtask-text{text-decoration:line-through;}
   .subtask-xp{font-size:.58rem;color:var(--orange);flex-shrink:0;margin-top:4px;opacity:.55;font-family:'JetBrains Mono',monospace;}
+  .archive-toggle{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 0 4px;cursor:pointer;color:var(--text-muted);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;user-select:none;transition:color .2s;}
+  .archive-toggle:hover{color:var(--text);}
+  .archive-toggle .arc-chevron{transition:transform .3s;font-size:.65rem;}
+  .archive-toggle.open .arc-chevron{transform:rotate(180deg);}
+  .archive-section{display:none;opacity:.55;}
+  .archive-section.open{display:block;}
+  .task-archive-toggle{display:flex;align-items:center;gap:5px;padding:5px 8px 2px;cursor:pointer;color:var(--text-muted);font-size:.68rem;letter-spacing:.06em;font-family:'JetBrains Mono',monospace;opacity:.65;user-select:none;transition:opacity .2s;border-top:1px solid var(--border);margin-top:4px;}
+  .task-archive-toggle:hover{opacity:1;}
+  .task-archive-toggle .tarc-chevron{transition:transform .25s;font-size:.6rem;}
+  .task-archive-toggle.open .tarc-chevron{transform:rotate(180deg);}
+  .task-archive-list{display:none;opacity:.55;}
+  .task-archive-list.open{display:block;}
 </style>
 </head>
 <body>
@@ -526,13 +538,19 @@ function countItems(q){let t=0,d=0;for(const i of q.tasks){if(i.subtasks){for(co
 function allSubsDone(t){return t.subtasks&&t.subtasks.every(s=>checked[s.id]);}
 function questXpValue(q){let xp=0;for(const t of q.tasks){if(t.subtasks)xp+=t.subtasks.length*XP_SUBTASK;else xp+=XP_TASK;}return xp+XP_QUEST;}
 function updateCharUI(){const{current,next}=getLevelData(totalXp);document.getElementById('char-level').textContent=current.level;document.getElementById('char-title').textContent=current.title;document.getElementById('wxp-week').textContent=weeklyXp.toLocaleString();document.getElementById('wxp-total').textContent=totalXp.toLocaleString();document.getElementById('wxp-quests').textContent=totalQuestsCompleted;if(next){const xi=totalXp-current.xp,xn=next.xp-current.xp;document.getElementById('char-xp-label').textContent=xi+' / '+xn+' pts';document.getElementById('xp-bar').style.width=Math.min(100,Math.round(xi/xn*100))+'%';}else{document.getElementById('char-xp-label').textContent='MAX TIER';document.getElementById('xp-bar').style.width='100%';}}
-function render(){const c=document.getElementById('quests');c.innerHTML='';let gt=0,gd=0;
-  for(const q of QUESTS){const{total,done}=countItems(q);gt+=total;gd+=done;const pct=total>0?Math.round(done/total*100):0;const isC=done===total&&total>0;const isO=openState[q.id]!==false;const qxp=questXpValue(q);
-    if(isC&&!questBonuses.includes(q.id)){questBonuses.push(q.id);totalQuestsCompleted++;awardXp(XP_QUEST,null);}
-    const card=document.createElement('div');card.className='quest-card'+(isC?' complete':'')+(isO?' open':'');card.id='quest-'+q.id;
-    let th='';for(const t of q.tasks){if(t.subtasks){const pd=allSubsDone(t);th+=`<div class="task-item ${pd?'done':''}" data-task="${t.id}" data-parent="true"><div class="task-cb"><span class="task-cb-check">✓</span></div><div class="task-text">${t.text}</div></div><div class="subtask-list">`;for(const s of t.subtasks)th+=`<div class="subtask-item ${checked[s.id]?'done':''}" data-subtask="${s.id}"><div class="subtask-cb"><span class="subtask-cb-check">✓</span></div><div class="subtask-text">${s.text}</div><span class="subtask-xp">+${XP_SUBTASK}</span></div>`;th+=`</div>`;}else th+=`<div class="task-item ${checked[t.id]?'done':''}" data-task="${t.id}"><div class="task-cb"><span class="task-cb-check">✓</span></div><div class="task-text">${t.text}</div><span class="task-xp">+${XP_TASK}</span></div>`;}
-    card.innerHTML=`<div class="quest-header" data-quest="${q.id}"><div class="quest-left"><span class="quest-icon">${q.icon}</span><div class="quest-name-wrap"><div class="quest-name">${q.name}</div><div class="quest-meta"><div class="quest-complete-badge">■ RESOLVED</div><span class="quest-xp-tag">+${qxp} pts</span></div></div></div><div class="quest-right"><span class="quest-mini-progress">${done}/${total}</span><span class="chevron">▼</span></div></div><div class="quest-prog-bar"><div class="quest-prog-fill" style="width:${pct}%"></div></div><div class="task-list">${th}</div>`;
-    c.appendChild(card);}
+function buildCard(q){const{total,done}=countItems(q);const pct=total>0?Math.round(done/total*100):0;const isC=done===total&&total>0;const isO=openState[q.id]!==false;const qxp=questXpValue(q);
+  if(isC&&!questBonuses.includes(q.id)){questBonuses.push(q.id);totalQuestsCompleted++;awardXp(XP_QUEST,null);}
+  const card=document.createElement('div');card.className='quest-card'+(isC?' complete':'')+(isO?' open':'');card.id='quest-'+q.id;
+  let activeTH='',doneTH='',doneCount=0;
+  for(const t of q.tasks){if(t.subtasks){const pd=allSubsDone(t);let block=`<div class="task-item ${pd?'done':''}" data-task="${t.id}" data-parent="true"><div class="task-cb"><span class="task-cb-check">✓</span></div><div class="task-text">${t.text}</div></div><div class="subtask-list">`;for(const s of t.subtasks)block+=`<div class="subtask-item ${checked[s.id]?'done':''}" data-subtask="${s.id}"><div class="subtask-cb"><span class="subtask-cb-check">✓</span></div><div class="subtask-text">${s.text}</div><span class="subtask-xp">+${XP_SUBTASK}</span></div>`;block+='</div>';if(pd){doneTH+=block;doneCount++;}else activeTH+=block;}else{const isDone=!!checked[t.id];const block=`<div class="task-item ${isDone?'done':''}" data-task="${t.id}"><div class="task-cb"><span class="task-cb-check">✓</span></div><div class="task-text">${t.text}</div><span class="task-xp">+${XP_TASK}</span></div>`;if(isDone){doneTH+=block;doneCount++;}else activeTH+=block;}}
+  const tarcOpen=localStorage.getItem('qlq-tarc-'+q.id)==='true';
+  const arcHtml=doneCount>0?`<div class="task-archive-toggle ${tarcOpen?'open':''}" data-qarc="${q.id}"><span class="tarc-chevron">▼</span>${doneCount} resolved</div><div class="task-archive-list ${tarcOpen?'open':''}" data-qarclist="${q.id}">${doneTH}</div>`:'';
+  card.innerHTML=`<div class="quest-header" data-quest="${q.id}"><div class="quest-left"><span class="quest-icon">${q.icon}</span><div class="quest-name-wrap"><div class="quest-name">${q.name}</div><div class="quest-meta"><div class="quest-complete-badge">■ RESOLVED</div><span class="quest-xp-tag">+${qxp} pts</span></div></div></div><div class="quest-right"><span class="quest-mini-progress">${done}/${total}</span><span class="chevron">▼</span></div></div><div class="quest-prog-bar"><div class="quest-prog-fill" style="width:${pct}%"></div></div><div class="task-list">${activeTH}${arcHtml}</div>`;
+  return{card,total,done,isC};}
+function render(){const c=document.getElementById('quests');c.innerHTML='';let gt=0,gd=0;const active=[],archived=[];
+  for(const q of QUESTS){const r=buildCard(q);gt+=r.total;gd+=r.done;if(r.isC)archived.push(r.card);else active.push(r.card);}
+  for(const card of active)c.appendChild(card);
+  if(archived.length>0){const arcOpen=localStorage.getItem('qlq-arc-open')==='true';const toggle=document.createElement('div');toggle.className='archive-toggle'+(arcOpen?' open':'');toggle.innerHTML=`<span class="arc-chevron">▼</span><span>Archived panels (${archived.length})</span>`;const section=document.createElement('div');section.className='archive-section'+(arcOpen?' open':'');for(const card of archived)section.appendChild(card);toggle.addEventListener('click',()=>{const o=!toggle.classList.contains('open');toggle.classList.toggle('open',o);section.classList.toggle('open',o);localStorage.setItem('qlq-arc-open',o);});c.appendChild(toggle);c.appendChild(section);}
   if(gd===gt&&gt>0&&!allBonus){allBonus=true;awardXp(XP_ALL,null);}
   const op=gt>0?Math.round(gd/gt*100):0;document.getElementById('overall-pct').textContent=op+'%';document.getElementById('overall-bar').style.width=op+'%';document.getElementById('reward-banner').classList.toggle('show',gd===gt&&gt>0);
   updateCharUI();attachListeners();}
@@ -540,7 +558,8 @@ function attachListeners(){
   document.querySelectorAll('.quest-header').forEach(h=>{h.addEventListener('click',()=>{const qid=h.dataset.quest;openState[qid]=!document.getElementById('quest-'+qid).classList.contains('open');save();render();});});
   document.querySelectorAll('.task-item:not([data-parent])').forEach(el=>{el.addEventListener('click',()=>{const was=!!checked[el.dataset.task];checked[el.dataset.task]=!was;if(!was)awardXp(XP_TASK,el);else{totalXp=Math.max(0,totalXp-XP_TASK);weeklyXp=Math.max(0,weeklyXp-XP_TASK);}save();render();});});
   document.querySelectorAll('.task-item[data-parent]').forEach(el=>{el.addEventListener('click',()=>{for(const q of QUESTS)for(const t of q.tasks){if(t.id===el.dataset.task&&t.subtasks){const a=t.subtasks.every(s=>checked[s.id]);t.subtasks.forEach(s=>{if(a&&checked[s.id]){totalXp=Math.max(0,totalXp-XP_SUBTASK);weeklyXp=Math.max(0,weeklyXp-XP_SUBTASK);}else if(!a&&!checked[s.id])awardXp(XP_SUBTASK,el);checked[s.id]=!a;});}};save();render();});});
-  document.querySelectorAll('.subtask-item').forEach(el=>{el.addEventListener('click',e=>{e.stopPropagation();const was=!!checked[el.dataset.subtask];checked[el.dataset.subtask]=!was;if(!was)awardXp(XP_SUBTASK,el);else{totalXp=Math.max(0,totalXp-XP_SUBTASK);weeklyXp=Math.max(0,weeklyXp-XP_SUBTASK);}save();render();});});}
+  document.querySelectorAll('.subtask-item').forEach(el=>{el.addEventListener('click',e=>{e.stopPropagation();const was=!!checked[el.dataset.subtask];checked[el.dataset.subtask]=!was;if(!was)awardXp(XP_SUBTASK,el);else{totalXp=Math.max(0,totalXp-XP_SUBTASK);weeklyXp=Math.max(0,weeklyXp-XP_SUBTASK);}save();render();});});
+  document.querySelectorAll('.task-archive-toggle').forEach(el=>{el.addEventListener('click',e=>{e.stopPropagation();const qid=el.dataset.qarc;const o=!el.classList.contains('open');el.classList.toggle('open',o);document.querySelector(`.task-archive-list[data-qarclist="${qid}"]`).classList.toggle('open',o);localStorage.setItem('qlq-tarc-'+qid,o);});});}
 document.getElementById('week-label').textContent='Week of '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
 (function spawnDots(){const c=document.getElementById('metric-dots');const cols=['#F46800','#5794F2','#73BF69','#FADE2A','#F2495C'];for(let i=0;i<55;i++){const d=document.createElement('div');d.className='dot';const sz=Math.random()*2.5+.6,col=cols[Math.floor(Math.random()*cols.length)];d.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;background:${col};--dur:${2+Math.random()*5}s;animation-delay:${Math.random()*5}s`;c.appendChild(d);}})();
 render();

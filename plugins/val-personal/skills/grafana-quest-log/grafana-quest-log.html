@@ -185,6 +185,18 @@
   .subtask-text{font-size:.8rem;color:var(--text-muted);line-height:1.4;flex:1;}
   .subtask-item.done .subtask-text{text-decoration:line-through;}
   .subtask-xp{font-size:.6rem;color:var(--xp-color);flex-shrink:0;margin-top:4px;opacity:.6;}
+  .archive-toggle{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 0 4px;cursor:pointer;color:var(--text-muted);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;user-select:none;transition:color .2s;}
+  .archive-toggle:hover{color:var(--text);}
+  .archive-toggle .arc-chevron{transition:transform .3s;font-size:.65rem;}
+  .archive-toggle.open .arc-chevron{transform:rotate(180deg);}
+  .archive-section{display:none;opacity:.55;}
+  .archive-section.open{display:block;}
+  .task-archive-toggle{display:flex;align-items:center;gap:5px;padding:5px 8px 2px;cursor:pointer;color:var(--text-muted);font-size:.68rem;letter-spacing:.06em;font-family:'JetBrains Mono',monospace;opacity:.65;user-select:none;transition:opacity .2s;border-top:1px solid var(--border);margin-top:4px;}
+  .task-archive-toggle:hover{opacity:1;}
+  .task-archive-toggle .tarc-chevron{transition:transform .25s;font-size:.6rem;}
+  .task-archive-toggle.open .tarc-chevron{transform:rotate(180deg);}
+  .task-archive-list{display:none;opacity:.55;}
+  .task-archive-list.open{display:block;}
 </style>
 </head>
 <body>
@@ -512,81 +524,118 @@ function updateCharUI() {
   }
 }
 
+// ── BUILD QUEST CARD HTML ─────────────────────────────────
+function buildCard(quest) {
+  const {total, done} = countItems(quest);
+  const pct  = total>0 ? Math.round(done/total*100) : 0;
+  const isC  = done===total && total>0;
+  const isO  = openState[quest.id] !== false;
+  const qxp  = questXpValue(quest);
+
+  if (isC && !questBonuses.includes(quest.id)) {
+    questBonuses.push(quest.id);
+    totalQuestsCompleted++;
+    awardXp(XP_QUEST, null);
+  }
+
+  const card = document.createElement('div');
+  card.className = 'quest-card' + (isC?' complete':'') + (isO?' open':'');
+  card.id = 'quest-' + quest.id;
+
+  let activeTH = '', doneTH = '', doneCount = 0;
+  for (const t of quest.tasks) {
+    if (t.subtasks) {
+      const pd = allSubsDone(t);
+      let block = `<div class="task-item ${pd?'done':''}" data-task="${t.id}" data-parent="true">
+        <div class="task-cb"><span class="task-cb-check">✓</span></div>
+        <div class="task-text">${t.text}</div>
+      </div><div class="subtask-list">`;
+      for (const s of t.subtasks) {
+        block += `<div class="subtask-item ${checked[s.id]?'done':''}" data-subtask="${s.id}">
+          <div class="subtask-cb"><span class="subtask-cb-check">✓</span></div>
+          <div class="subtask-text">${s.text}</div>
+          <span class="subtask-xp">+${XP_SUBTASK}</span>
+        </div>`;
+      }
+      block += '</div>';
+      if (pd) { doneTH += block; doneCount++; }
+      else activeTH += block;
+    } else {
+      const isDone = !!checked[t.id];
+      const block = `<div class="task-item ${isDone?'done':''}" data-task="${t.id}">
+        <div class="task-cb"><span class="task-cb-check">✓</span></div>
+        <div class="task-text">${t.text}</div>
+        <span class="task-xp">+${XP_TASK}</span>
+      </div>`;
+      if (isDone) { doneTH += block; doneCount++; }
+      else activeTH += block;
+    }
+  }
+
+  const tarcOpen = localStorage.getItem('qlq-tarc-' + quest.id) === 'true';
+  const archiveHtml = doneCount > 0 ? `
+    <div class="task-archive-toggle ${tarcOpen?'open':''}" data-qarc="${quest.id}">
+      <span class="tarc-chevron">▼</span>${doneCount} resolved
+    </div>
+    <div class="task-archive-list ${tarcOpen?'open':''}" data-qarclist="${quest.id}">${doneTH}</div>` : '';
+
+  card.innerHTML = `
+    <div class="quest-header" data-quest="${quest.id}">
+      <div class="quest-left">
+        <span class="quest-icon">${quest.icon}</span>
+        <div class="quest-name-wrap">
+          <div class="quest-name">${quest.name}</div>
+          <div class="quest-meta">
+            <div class="quest-complete-badge">✦ COMPLETE ✦</div>
+            <span class="quest-xp-tag">+${qxp} XP</span>
+          </div>
+        </div>
+      </div>
+      <div class="quest-right">
+        <span class="quest-mini-progress">${done}/${total}</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="quest-prog-bar"><div class="quest-prog-fill" style="width:${pct}%"></div></div>
+    <div class="task-list">${activeTH}${archiveHtml}</div>`;
+  return { card, total, done, isC };
+}
+
 // ── RENDER ────────────────────────────────────────────────
 function render() {
   const container = document.getElementById('quests');
   container.innerHTML = '';
   let gt=0, gd=0;
+  const active = [], archived = [];
 
   for (const quest of QUESTS) {
-    const {total, done} = countItems(quest);
-    gt+=total; gd+=done;
-    const pct   = total>0 ? Math.round(done/total*100) : 0;
-    const isC   = done===total && total>0;
-    const isO   = openState[quest.id] !== false;
-    const qxp   = questXpValue(quest);
-
-    if (isC && !questBonuses.includes(quest.id)) {
-      questBonuses.push(quest.id);
-      totalQuestsCompleted++;
-      awardXp(XP_QUEST, null);
-    }
-
-    const card = document.createElement('div');
-    card.className = 'quest-card' + (isC?' complete':'') + (isO?' open':'');
-    card.id = 'quest-' + quest.id;
-
-    let th = '';
-    for (const t of quest.tasks) {
-      if (t.subtasks) {
-        const pd = allSubsDone(t);
-        th += `<div class="task-item ${pd?'done':''}" data-task="${t.id}" data-parent="true">
-          <div class="task-cb"><span class="task-cb-check">✓</span></div>
-          <div class="task-text">${t.text}</div>
-        </div><div class="subtask-list">`;
-        for (const s of t.subtasks) {
-          th += `<div class="subtask-item ${checked[s.id]?'done':''}" data-subtask="${s.id}">
-            <div class="subtask-cb"><span class="subtask-cb-check">✓</span></div>
-            <div class="subtask-text">${s.text}</div>
-            <span class="subtask-xp">+${XP_SUBTASK}</span>
-          </div>`;
-        }
-        th += '</div>';
-      } else {
-        th += `<div class="task-item ${checked[t.id]?'done':''}" data-task="${t.id}">
-          <div class="task-cb"><span class="task-cb-check">✓</span></div>
-          <div class="task-text">${t.text}</div>
-          <span class="task-xp">+${XP_TASK}</span>
-        </div>`;
-      }
-    }
-
-    card.innerHTML = `
-      <div class="quest-header" data-quest="${quest.id}">
-        <div class="quest-left">
-          <span class="quest-icon">${quest.icon}</span>
-          <div class="quest-name-wrap">
-            <div class="quest-name">${quest.name}</div>
-            <div class="quest-meta">
-              <div class="quest-complete-badge">✦ COMPLETE ✦</div>
-              <span class="quest-xp-tag">+${qxp} XP</span>
-            </div>
-          </div>
-        </div>
-        <div class="quest-right">
-          <span class="quest-mini-progress">${done}/${total}</span>
-          <span class="chevron">▼</span>
-        </div>
-      </div>
-      <div class="quest-prog-bar"><div class="quest-prog-fill" style="width:${pct}%"></div></div>
-      <div class="task-list">${th}</div>`;
-    container.appendChild(card);
+    const result = buildCard(quest);
+    gt += result.total; gd += result.done;
+    if (result.isC) archived.push(result.card);
+    else active.push(result.card);
   }
 
-  if (gd===gt && gt>0 && !allBonus) {
-    allBonus = true;
-    awardXp(XP_ALL, null);
+  for (const card of active) container.appendChild(card);
+
+  if (archived.length > 0) {
+    const arcOpen = localStorage.getItem('qlq-arc-open') === 'true';
+    const toggle = document.createElement('div');
+    toggle.className = 'archive-toggle' + (arcOpen ? ' open' : '');
+    toggle.innerHTML = `<span class="arc-chevron">▼</span><span>Archived panels (${archived.length})</span>`;
+    const section = document.createElement('div');
+    section.className = 'archive-section' + (arcOpen ? ' open' : '');
+    for (const card of archived) section.appendChild(card);
+    toggle.addEventListener('click', () => {
+      const o = !toggle.classList.contains('open');
+      toggle.classList.toggle('open', o);
+      section.classList.toggle('open', o);
+      localStorage.setItem('qlq-arc-open', o);
+    });
+    container.appendChild(toggle);
+    container.appendChild(section);
   }
+
+  if (gd===gt && gt>0 && !allBonus) { allBonus = true; awardXp(XP_ALL, null); }
 
   const op = gt>0 ? Math.round(gd/gt*100) : 0;
   document.getElementById('overall-pct').textContent = op + '%';
@@ -641,6 +690,17 @@ function attachListeners() {
       if (!wasChecked) awardXp(XP_SUBTASK, el);
       else { totalXp = Math.max(0, totalXp-XP_SUBTASK); weeklyXp = Math.max(0,weeklyXp-XP_SUBTASK); }
       save(); render();
+    });
+  });
+
+  document.querySelectorAll('.task-archive-toggle').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const qid = el.dataset.qarc;
+      const o = !el.classList.contains('open');
+      el.classList.toggle('open', o);
+      document.querySelector(`.task-archive-list[data-qarclist="${qid}"]`).classList.toggle('open', o);
+      localStorage.setItem('qlq-tarc-' + qid, o);
     });
   });
 }
