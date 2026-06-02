@@ -9,53 +9,69 @@
 
 ## What this skill does
 
-Helps the user build or update their Grafana Quest Log to-do list. Takes a brain dump of tasks, organizes them into quests and tasks, and generates a JSON import file they can load directly into the app using the Import Scroll button.
+Helps the user build or update their Grafana Quest Log to-do list. Takes a brain dump of tasks, organizes them into quests and tasks, then writes them directly into the HTML file. The user just refreshes — quests appear instantly. No importing, no extra steps.
+
+## How it works
+
+The HTML file contains a special placeholder line:
+```js
+const SEED_QUESTS = null; // ROLL_FOR_INITIATIVE
+```
+
+This skill replaces `null` with a real quests array. On next page load, the app reads it and loads the quests into localStorage automatically.
+
+The HTML file lives at: `~/Desktop/grafana-quest-log.html`
+
+---
 
 ## Instructions
-
-When triggered, follow these steps:
 
 ### Step 1 — Collect tasks
 Ask the user: "What's on your plate? Brain dump everything — I'll organize it."
 
-Let them list everything in whatever format they want. Don't interrupt.
+Let them list everything in whatever format they want. Don't interrupt or ask clarifying questions until they're done.
 
 ### Step 2 — Organize
-Group their items into logical quest categories (3-6 quests max). Each quest should have 2-8 tasks.
+Group their items into logical quest categories (3–6 quests max). Each quest should have 2–8 tasks. Keep task text concise but clear.
 
-Naming conventions by tone:
+Naming conventions by tone (check `gql-tone` in the file or ask):
 - **epic**: Quest names like "The Weekly Campaign", "The Documentation Trial", "The Sync Ritual"
 - **chill**: Simple names like "Meetings", "Research", "Admin", "Team stuff"
 - **grot**: Names like "Grot's Mandates", "The Sacred Scrolls of Slack", "Grot Demands Action"
 
-If unsure of tone, ask: "What tone is your quest log set to — Epic, Chill, or Grot Mode?"
+Show the organized list to the user and confirm before writing.
 
-### Step 3 — Generate import JSON
+### Step 3 — Write directly to the file
 
-Output a JSON object in this exact format (all `gql-*` keys):
-
-```json
-{
-  "gql-quests": "[{\"id\":\"q-1\",\"name\":\"Quest Name\",\"icon\":\"⚔️\",\"tasks\":[{\"id\":\"t-1-1\",\"text\":\"Task description\"},{\"id\":\"t-1-2\",\"text\":\"Another task\"}]},{\"id\":\"q-2\",\"name\":\"Another Quest\",\"icon\":\"🔥\",\"tasks\":[{\"id\":\"t-2-1\",\"text\":\"Task here\"}]}]",
-  "gql-setup-done": "true"
-}
+Read `/Users/valmartin/Desktop/grafana-quest-log.html` and replace exactly this line:
+```
+const SEED_QUESTS = null; // ROLL_FOR_INITIATIVE
 ```
 
-**Important:**
-- `gql-quests` value must be a JSON-stringified array (string inside the outer JSON)
+With the quests array on the same line, keeping the comment:
+```
+const SEED_QUESTS = [{"id":"q-1","name":"Quest Name","icon":"⚔️","tasks":[{"id":"t-1-1","text":"Task description"},{"id":"t-1-2","text":"Another task"}]},{"id":"q-2","name":"Another Quest","icon":"🔥","tasks":[{"id":"t-2-1","text":"Task here"}]}]; // ROLL_FOR_INITIATIVE
+```
+
+**Important rules:**
+- Keep `// ROLL_FOR_INITIATIVE` at the end of the line — it's how the skill finds the line next time
 - Use unique IDs: `q-1`, `q-2`, etc. for quests; `t-1-1`, `t-1-2`, `t-2-1`, etc. for tasks
-- Do NOT include `gql-checked`, `gql-total-xp`, `gql-weekly-xp` or any XP/progress keys — those must be preserved
-- Icons: ⚔️🔥🛡️📜🗺️💀🧙‍♂️🏆🌟💫 (rotate through these)
+- Do NOT touch any other line in the file
+- Do NOT modify XP, level, or checked task data — only the quest/task structure changes
+- Icons to rotate through: ⚔️ 🔥 🛡️ 📜 🗺️ 💀 🧙‍♂️ 🏆 🌟 💫
 
-### Step 4 — Deliver
+Also copy the updated file to the repo:
+```
+cp ~/Desktop/grafana-quest-log.html ~/claude-plugins/plugins/val-personal/skills/grafana-quest-log/grafana-quest-log.html
+```
 
-Tell the user:
-1. Show them the organized quest list in a readable format first
-2. Ask if they want to add/change anything
-3. Once confirmed, output the JSON wrapped in a code block
-4. Give instructions: "Save this as `quest-import.json`, then open your Quest Log and click **Import Scroll** (top right). Your quests will load immediately."
+### Step 4 — Tell the user
 
-### Notes
-- If the user says "clear my quests" or "start fresh", generate a JSON with an empty quests array and confirm before proceeding
-- If the user just wants to ADD quests (not replace), ask them to first Export Scroll so you can see their current quests, then add to the existing list
-- XP, level, and Grot progress are NEVER touched by this skill — only the quest/task list
+"Done! Refresh your Quest Log and your quests will be there. ⚔️"
+
+---
+
+## Notes
+- If the user says "clear my quests" or "start fresh", replace with an empty array `[]` — the wizard will show again on next load
+- XP, level, Grot tier, and checked tasks are NEVER touched — only the quest/task structure changes
+- If the user wants to ADD quests (not replace), read the current `SEED_QUESTS` value from the file first, then append to it

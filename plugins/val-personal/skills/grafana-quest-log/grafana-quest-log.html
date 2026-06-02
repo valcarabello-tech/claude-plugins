@@ -583,6 +583,14 @@ function getISOWeekKey() {
 }
 const WEEK_KEY = getISOWeekKey();
 
+// ── SEED QUESTS (managed by roll-for-initiative skill) ────
+// Claude edits the line below when you say "roll for initiative"
+const SEED_QUESTS = null; // ROLL_FOR_INITIATIVE
+if (SEED_QUESTS) {
+  localStorage.setItem('gql-quests', JSON.stringify(SEED_QUESTS));
+  localStorage.setItem('gql-setup-done', 'true');
+}
+
 // ── TONE SYSTEM ───────────────────────────────────────────
 const TONE_COPY = {
   epic: {
@@ -1307,6 +1315,13 @@ function selectSettingsTone(tone, el) {
   });
 }
 
+function resetApp() {
+  if (confirm('Reset everything? This clears your quests, XP, and progress. Cannot be undone.')) {
+    Object.keys(localStorage).filter(k => k.startsWith('gql-')).forEach(k => localStorage.removeItem(k));
+    location.reload();
+  }
+}
+
 function saveSettings() {
   const name = document.getElementById('settings-name').value.trim() || 'Adventurer';
   localStorage.setItem('gql-player-name', name);
@@ -1374,6 +1389,7 @@ if (setupDone) {
       <button class="tone-setting-btn" data-tone="grot" onclick="selectSettingsTone('grot',this)" style="flex:1;padding:8px;border-radius:8px;cursor:pointer;border:2px solid transparent;background:rgba(255,255,255,.07);color:#fff;font-size:.85rem;">🐸 Grot</button>
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="resetApp()" style="background:rgba(255,60,60,.15);border:1px solid rgba(255,60,60,.3);color:#ff6b6b;padding:9px 20px;border-radius:8px;cursor:pointer;margin-right:auto;">Reset App</button>
       <button onclick="closeSettings()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:var(--text-muted);padding:9px 20px;border-radius:8px;cursor:pointer;">Cancel</button>
       <button onclick="saveSettings()" style="background:var(--orange);border:none;color:#000;font-weight:700;padding:9px 20px;border-radius:8px;cursor:pointer;">Save</button>
     </div>
