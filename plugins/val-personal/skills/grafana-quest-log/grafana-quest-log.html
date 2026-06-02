@@ -391,7 +391,7 @@
   <!-- Campaign Progress -->
   <div class="overall-progress">
     <div class="progress-header">
-      <span class="progress-label">🤖 Weekly Campaign</span>
+      <span class="progress-label">⚔️ Weekly Campaign</span>
       <span class="progress-pct" id="overall-pct">0%</span>
     </div>
     <div class="progress-bar-wrap">
@@ -638,12 +638,12 @@ const TONE_COPY = {
   },
   grot: {
     weekLabel: name => `Grot watches ${name}`,
-    questComplete: '🐸 GROT APPROVES ✦',
-    allDone: '🐸 Grot has seen all. Grot is satisfied.',
+    questComplete: '<img class="grot-inline" src=""> GROT APPROVES ✦',
+    allDone: '<img class="grot-inline" src=""> Grot has seen all. Grot is satisfied.',
     levelUp: level => `Grot has grown. Level ${level}.`,
     nextGrot: level => `Grot transforms at Level ${level}`,
-    exportBtn: '🐸 Export Scroll',
-    importBtn: '🐸 Import Scroll',
+    exportBtn: '<img class="grot-inline" src=""> Export Scroll',
+    importBtn: '<img class="grot-inline" src=""> Import Scroll',
   }
 };
 
@@ -792,7 +792,7 @@ function _animateConfetti(){
   if(_particles.length>0)_animId=requestAnimationFrame(_animateConfetti);
   else _ctx.clearRect(0,0,_cvs.width,_cvs.height);
 }
-const _EMOJIS=['⚔️','✨','🤖','🌟','🏆','🔮','🌙','⭐','🗡️','💫','🍊'];
+const _EMOJIS=['⚔️','✨','⚡','🌟','🏆','🔮','🌙','⭐','🗡️','💫','🍊'];
 function _emojiBurst(){
   const badge=document.getElementById('char-level').closest('.level-badge')||document.body;
   const rect=badge.getBoundingClientRect();
@@ -907,8 +907,8 @@ function updateCharUI() {
   }
 
   // Export/import button labels
-  document.getElementById('export-btn').textContent = T.exportBtn;
-  document.getElementById('import-btn').textContent = T.importBtn;
+  document.getElementById('export-btn').innerHTML = T.exportBtn;
+  document.getElementById('import-btn').innerHTML = T.importBtn;
 
   // Week label
   const playerName = localStorage.getItem('gql-player-name') || 'Adventurer';
@@ -921,9 +921,9 @@ function updateCharUI() {
     const toneHints = {
       epic:  `⚔️ Tell Claude "${phrase}" to summon your next week's quests.`,
       chill: `💬 Tell Claude "${phrase}" to load up your next batch of tasks.`,
-      grot:  `🐸 Command Claude with "${phrase}" — Grot awaits your next mission.`
+      grot:  `<img class="grot-inline" src=""> Command Claude with "${phrase}" — Grot awaits your next mission.`
     };
-    triggerHintEl.textContent = toneHints[currentTone] || toneHints.epic;
+    triggerHintEl.innerHTML = toneHints[currentTone] || toneHints.epic;
   }
 }
 
