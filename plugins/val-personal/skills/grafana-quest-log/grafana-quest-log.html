@@ -630,8 +630,15 @@ const WEEK_KEY = getISOWeekKey();
 // Claude edits the line below when you say "roll for initiative"
 const SEED_QUESTS = null; // ROLL_FOR_INITIATIVE
 if (SEED_QUESTS) {
-  localStorage.setItem('gql-quests', JSON.stringify(SEED_QUESTS));
-  localStorage.setItem('gql-setup-done', 'true');
+  // Only apply if genuinely new — prevents overwriting in-app edits
+  // every relaunch after Claude writes quests into the file
+  const _seedStr = JSON.stringify(SEED_QUESTS);
+  const _seedHash = _seedStr.length + '_' + _seedStr.slice(0, 32);
+  if (lsGet('gql-seed-hash') !== _seedHash) {
+    lsSet('gql-quests', _seedStr);
+    lsSet('gql-setup-done', 'true');
+    lsSet('gql-seed-hash', _seedHash);
+  }
 }
 
 // ── TONE SYSTEM ───────────────────────────────────────────
