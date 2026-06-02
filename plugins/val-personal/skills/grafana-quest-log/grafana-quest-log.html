@@ -356,7 +356,6 @@
   <!-- Character Card -->
   <div class="char-card">
     <div class="char-top">
-      <img class="grot-img" src="" alt="Grot">
       <div class="level-badge">
         <div class="level-num" id="char-level">1</div>
         <div class="level-lbl">Level</div>
@@ -860,6 +859,17 @@ function questXpValue(quest) {
     else xp += XP_TASK;
   }
   return xp + XP_QUEST;
+}
+
+// ── LEVEL LOOKUP ──────────────────────────────────────────
+function getLevelData(xp) {
+  let current = LEVELS[0];
+  for (let i = 1; i < LEVELS.length; i++) {
+    if (xp >= LEVELS[i].xp) current = LEVELS[i];
+    else break;
+  }
+  const next = current.level < LEVELS.length ? LEVELS[current.level] : null;
+  return { current, next };
 }
 
 // ── UPDATE CHARACTER UI ───────────────────────────────────
