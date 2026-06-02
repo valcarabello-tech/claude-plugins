@@ -40,7 +40,7 @@ If the download failed (file missing or tiny), stop and tell the user:
 ### Step 3 — Download and install the app
 
 ```bash
-curl -L "https://github.com/valcarabello-tech/claude-plugins/raw/grafana-quest-log/plugins/val-personal/skills/grafana-quest-log/GrafanaQuestLog.app.zip" \
+curl -L "https://raw.githubusercontent.com/valcarabello-tech/claude-plugins/grafana-quest-log/plugins/val-personal/skills/grafana-quest-log/GrafanaQuestLog.app.zip" \
   -o ~/Desktop/GrafanaQuestLog.app.zip
 
 cd ~/Desktop && unzip -o GrafanaQuestLog.app.zip
