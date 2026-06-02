@@ -628,7 +628,7 @@ const WEEK_KEY = getISOWeekKey();
 
 // ── SEED QUESTS (managed by roll-for-initiative skill) ────
 // Claude edits the line below when you say "roll for initiative"
-const SEED_QUESTS = null; // ROLL_FOR_INITIATIVE
+const SEED_QUESTS = [{"id":"q-1","name":"The Speaker Series Gambit","icon":"🔥","tasks":[{"id":"t-1-1","text":"Broadcast the Call to Download the Creation Skill"},{"id":"t-1-2","text":"Forge the Session of Boundless Possibility"},{"id":"t-1-3","text":"Convene the Page Creation Conclave"}]},{"id":"q-2","name":"The Great Welcoming Ritual","icon":"⚔️","tasks":[{"id":"t-2-1","text":"Inscribe the Register of Champions"},{"id":"t-2-2","text":"Dispatch the Battle Plans"},{"id":"t-2-3","text":"Brief the Speaker Vanguard"},{"id":"t-2-4","text":"Secure the Pre-Battle Feast"}]}]; // ROLL_FOR_INITIATIVE
 if (SEED_QUESTS) {
   // Only apply if genuinely new — prevents overwriting in-app edits
   // every relaunch after Claude writes quests into the file

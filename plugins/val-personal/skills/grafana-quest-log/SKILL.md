@@ -39,19 +39,25 @@ Let them list everything in whatever format they want. Don't interrupt or ask cl
 
 ### Step 2 — Organize AND rewrite with flavor
 
-Group their items into logical quest categories (3–6 quests max). Each quest should have 2–8 tasks.
+‼️ **REWRITE EVERYTHING. Do not copy the user's words verbatim. This is the whole point.**
 
-**IMPORTANT: Do NOT use the user's exact words.** Transform the content with personality and tone:
-- Quest names should be evocative, not literal ("The Documentation Trial" not "Write docs")
-- Task text should have personality, not be a verbatim copy ("Negotiate the Slack backlog" not "reply to slack messages")
-- Make it feel fun — someone should smile reading their to-do list
+If the user says "reply to slack messages" and you write "reply to slack messages" — that's a failure. Every single quest name and task must be transformed.
 
-Naming and task conventions by tone:
-- **epic**: Quest names like "The Weekly Campaign", "The Documentation Trial", "The Sync Ritual". Tasks like "Vanquish the inbox backlog", "Forge the Q3 alignment doc", "Summon the cross-functional council"
-- **chill**: Relaxed but still punchy. Quests like "Inbox Stuff", "The Meeting Gauntlet", "Side Quest: Research". Tasks like "Send that thing to Sarah", "Block time for the big doc", "Figure out what's happening with X"
-- **grot**: Grot speaks. Quests like "Grot's Mandates", "The Sacred Scrolls of Slack", "Grot Demands These Done". Tasks like "Grot watches you write this doc", "Do not disappoint Grot with this meeting", "Grot has noted this is overdue"
+Group into 3–6 quests. Each quest gets 2–8 tasks. Then rewrite every word:
 
-Show the organized, rewritten list to the user and confirm before writing.
+**By tone — quest names:**
+- **epic**: "The Weekly Campaign", "The Documentation Trial", "The Sync Ritual", "The Speaker Series Gambit"
+- **chill**: "Inbox Stuff", "The Meeting Gauntlet", "Side Quest: Research", "Comms & Chaos"
+- **grot**: "Grot's Mandates", "The Sacred Scrolls of Slack", "Grot Demands These Done"
+
+**By tone — task text:**
+- **epic**: "Vanquish the inbox backlog", "Forge the Q3 alignment doc", "Summon the cross-functional council", "Inscribe the Register of Champions", "Dispatch the Battle Plans"
+- **chill**: "Send that thing to Sarah", "Block time for the big doc", "Figure out what's happening with X", "Loop in the team"
+- **grot**: "Grot watches you write this doc", "Do not disappoint Grot with this meeting", "Grot has noted this is overdue", "Grot demands a response by EOD"
+
+**The bar:** Read back the rewritten list and ask yourself — would someone smile reading this? If it sounds like a plain to-do list, rewrite it again.
+
+Show the rewritten list to the user and confirm before writing.
 
 ### Step 3 — Write directly to the file
 
