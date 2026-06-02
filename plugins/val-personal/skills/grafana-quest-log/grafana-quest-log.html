@@ -185,6 +185,19 @@
   .task-del-btn:hover{color:rgba(255,80,80,1);}
   .task-item:hover .task-del-btn{display:block;}
   .task-item.done .task-del-btn{display:none !important;}
+  .task-grip{display:none;color:rgba(255,255,255,.2);cursor:grab;font-size:.85rem;flex-shrink:0;align-self:center;padding:0 2px;user-select:none;}
+  .task-item:hover .task-grip{display:block;}
+  .task-item.done .task-grip{display:none !important;}
+  .task-item.dragging{opacity:.35;background:rgba(244,104,0,.08);}
+  .task-item.drag-over{outline:2px solid rgba(244,104,0,.6);outline-offset:-1px;border-radius:8px;}
+  .quest-del-btn{display:none;background:none;border:none;color:rgba(255,80,80,.5);font-size:1.1rem;cursor:pointer;padding:0 4px;line-height:1;margin-left:4px;transition:color .15s;flex-shrink:0;}
+  .quest-del-btn:hover{color:rgba(255,80,80,1);}
+  .quest-header:hover .quest-del-btn{display:inline;}
+  .add-task-row{padding:4px 8px 8px;display:flex;align-items:center;gap:8px;}
+  .add-task-btn{background:none;border:1px dashed rgba(255,255,255,.15);color:rgba(255,255,255,.35);font-size:.78rem;padding:4px 10px;border-radius:6px;cursor:pointer;transition:all .2s;}
+  .add-task-btn:hover{border-color:rgba(244,104,0,.4);color:var(--orange);}
+  .add-task-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(244,104,0,.4);border-radius:6px;color:#fff;padding:5px 10px;font-size:.85rem;font-family:inherit;outline:none;}
+  #undo-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1f24;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:14px;z-index:850;box-shadow:0 4px 24px rgba(0,0,0,.5);animation:fadein .2s ease;}
   .subtask-list{padding-left:16px;}
   .subtask-item{display:flex;align-items:flex-start;gap:8px;padding:4px 8px;border-radius:6px;cursor:pointer;transition:background .15s;position:relative;}
   .subtask-item:hover{background:rgba(255,255,255,.04);}
@@ -350,11 +363,11 @@
 <div class="content" id="main-app" style="display:none;">
   <div class="header" style="position:relative;">
     <button id="settings-btn" onclick="openSettings()" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--text-muted);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;" onmouseover="this.style.color='#F46800'" onmouseout="this.style.color=''">⚙️</button>
-    <div class="sparkle-row">⚔️ ✦ ⚔️ ✦ ⚔️</div>
+    <div class="sparkle-row" id="sparkle-top">⚔️ ✦ ⚔️ ✦ ⚔️</div>
     <img class="grot-img" src="" alt="Grot" style="min-width:110px;min-height:110px;">
     <div class="header-title" id="app-title">Quest Log</div>
     <div class="header-sub" id="week-label">Loading...</div>
-    <div class="sparkle-row">🗡️ ✦ 🛡️ ✦ 🗡️</div>
+    <div class="sparkle-row" id="sparkle-bot">🗡️ ✦ 🛡️ ✦ 🗡️</div>
   </div>
 
   <!-- Character Card -->
@@ -930,6 +943,22 @@ function updateCharUI() {
   const playerName = localStorage.getItem('gql-player-name') || 'Adventurer';
   document.getElementById('week-label').textContent = T.weekLabel(playerName);
 
+  // Sparkle rows — tone aware
+  const sparkleTop = document.getElementById('sparkle-top');
+  const sparkleBot = document.getElementById('sparkle-bot');
+  const gi2 = '<img class="grot-inline" src="">';
+  const sparkles = {
+    epic:  ['⚔️ ✦ ⚔️ ✦ ⚔️', '🗡️ ✦ 🛡️ ✦ 🗡️'],
+    chill: ['✨ · ✨ · ✨',   '💫 · 🌟 · 💫'],
+    grot:  [gi2+' ✦ '+gi2+' ✦ '+gi2, gi2+' ✦ '+gi2+' ✦ '+gi2]
+  };
+  const sp = sparkles[currentTone] || sparkles.epic;
+  if (sparkleTop) sparkleTop.innerHTML = sp[0];
+  if (sparkleBot) sparkleBot.innerHTML = sp[1];
+
+  // Window title with player name
+  document.title = playerName ? 'Grafana Quest Log · ' + playerName : 'Grafana Quest Log';
+
   // Trigger phrase hint in reward banner
   const triggerHintEl = document.getElementById('trigger-hint');
   if (triggerHintEl) {
@@ -979,7 +1008,8 @@ function buildCard(quest) {
       if (pd) { doneTH += block; doneCount++; }
       else activeTH += block;
     } else {
-      const block = `<div class="task-item ${checked[t.id]?'done':''}" data-task="${t.id}" data-qid="${quest.id}">
+      const block = `<div class="task-item ${checked[t.id]?'done':''}" data-task="${t.id}" data-qid="${quest.id}" draggable="true">
+          <span class="task-grip">⠿</span>
           <div class="task-cb"><span class="task-cb-check">✓</span></div>
           <div class="task-text" ondblclick="startEditTask('${quest.id}','${t.id}',this)">${t.text}</div>
           <span class="task-xp">+${XP_TASK}</span>
@@ -1012,10 +1042,16 @@ function buildCard(quest) {
       <div class="quest-right">
         <span class="quest-mini-progress">${done}/${total}</span>
         <span class="chevron">▼</span>
+        <button class="quest-del-btn" onclick="deleteQuest('${quest.id}',event)" title="Remove quest">×</button>
       </div>
     </div>
     <div class="quest-prog-bar"><div class="quest-prog-fill" style="width:${pct}%"></div></div>
-    <div class="task-list">${activeTH}${archiveHtml}</div>`;
+    <div class="task-list">${activeTH}${archiveHtml}
+      <div class="add-task-row" data-aqid="${quest.id}">
+        <button class="add-task-btn" onclick="showAddTaskInput('${quest.id}',this)">+ add task</button>
+        <input class="add-task-input" style="display:none" placeholder="New task… (Enter to add)" data-aqid="${quest.id}">
+      </div>
+    </div>`;
   return { card, total, done, isC };
 }
 
@@ -1087,7 +1123,14 @@ function attachListeners() {
       const wasChecked = !!checked[el.dataset.task];
       checked[el.dataset.task] = !wasChecked;
       if (!wasChecked) awardXp(XP_TASK, el);
-      else { totalXp = Math.max(0, totalXp - XP_TASK); weeklyXp = Math.max(0, weeklyXp - XP_TASK); }
+      else {
+        const _snapXp = totalXp, _snapWeek = weeklyXp, _tid = el.dataset.task;
+        totalXp = Math.max(0, totalXp - XP_TASK);
+        weeklyXp = Math.max(0, weeklyXp - XP_TASK);
+        save(); render();
+        showUndoToast(() => { checked[_tid] = true; totalXp = _snapXp; weeklyXp = _snapWeek; save(); render(); });
+        return;
+      }
       save(); render();
     });
   });
@@ -1118,6 +1161,8 @@ function attachListeners() {
       save(); render();
     });
   });
+
+  attachDragListeners();
 
   document.querySelectorAll('.task-archive-toggle').forEach(el => {
     el.addEventListener('click', e => {
@@ -1382,7 +1427,13 @@ function openSettings() {
   if (weeks.length > 0) {
     histSection.style.display = 'block';
     histList.innerHTML = weeks.map(w => {
-      const label = w.replace('-W', ' Week ');
+      // Format "2026-W22" → "Week 22 · Jun 2026"
+      const [yr, wn] = w.split('-W');
+      const jan4 = new Date(Date.UTC(+yr, 0, 4));
+      const weekStart = new Date(jan4);
+      weekStart.setUTCDate(jan4.getUTCDate() - ((jan4.getUTCDay() + 6) % 7) + (+wn - 1) * 7);
+      const monthName = weekStart.toLocaleDateString('en-US', {month:'short', timeZone:'UTC'});
+      const label = 'Week ' + wn + ' · ' + monthName + ' ' + yr;
       return `<div style="display:flex;justify-content:space-between;padding:4px 8px;background:rgba(255,255,255,.04);border-radius:6px;"><span>${label}</span><span style="color:var(--orange);">+${hist[w].toLocaleString()} XP</span></div>`;
     }).join('');
   } else {
@@ -1662,6 +1713,126 @@ function copyTriggerPhrase() {
   }).catch(() => {
     // Fallback: select the text
     document.getElementById('settings-trigger').select();
+  });
+}
+
+// ── DRAG TO REORDER ───────────────────────────────────────
+let _dragSrcQid = null, _dragSrcTid = null;
+
+function attachDragListeners() {
+  document.querySelectorAll('.task-item[draggable]:not(.done)').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      _dragSrcQid = el.dataset.qid;
+      _dragSrcTid = el.dataset.task;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      document.querySelectorAll('.task-item').forEach(t => t.classList.remove('drag-over'));
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.task-item').forEach(t => t.classList.remove('drag-over'));
+      if (el.dataset.task !== _dragSrcTid) el.classList.add('drag-over');
+    });
+    el.addEventListener('drop', e => {
+      e.stopPropagation();
+      const dropQid = el.dataset.qid;
+      const dropTid = el.dataset.task;
+      if (_dragSrcTid === dropTid) return;
+      // Find and remove source task
+      let srcTask = null;
+      for (const q of QUESTS) {
+        if (q.id === _dragSrcQid) {
+          const idx = q.tasks.findIndex(t => t.id === _dragSrcTid);
+          if (idx > -1) { [srcTask] = q.tasks.splice(idx, 1); }
+          break;
+        }
+      }
+      if (!srcTask) return;
+      // Insert before drop target
+      for (const q of QUESTS) {
+        if (q.id === dropQid) {
+          const idx = q.tasks.findIndex(t => t.id === dropTid);
+          q.tasks.splice(idx > -1 ? idx : q.tasks.length, 0, srcTask);
+          break;
+        }
+      }
+      lsSet('gql-quests', JSON.stringify(QUESTS));
+      save(); render();
+    });
+  });
+}
+
+// ── UNDO TOAST ────────────────────────────────────────────
+let _undoTimer = null;
+window._lastUndo = null;
+window._doUndo = function() {
+  clearTimeout(_undoTimer);
+  const t = document.getElementById('undo-toast');
+  if (t) t.remove();
+  if (window._lastUndo) { window._lastUndo(); window._lastUndo = null; }
+};
+
+function showUndoToast(undoFn) {
+  clearTimeout(_undoTimer);
+  const existing = document.getElementById('undo-toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.id = 'undo-toast';
+  toast.innerHTML = `<span style="font-size:.82rem;color:var(--text-muted);">−${XP_TASK} XP removed</span><button onclick="window._doUndo()" style="background:rgba(244,104,0,.18);border:1px solid rgba(244,104,0,.5);color:var(--orange);padding:4px 14px;border-radius:6px;cursor:pointer;font-size:.8rem;white-space:nowrap;">Undo</button>`;
+  document.body.appendChild(toast);
+  window._lastUndo = undoFn;
+  _undoTimer = setTimeout(() => { toast.remove(); window._lastUndo = null; }, 5000);
+}
+
+// ── DELETE QUEST ──────────────────────────────────────────
+function deleteQuest(questId, e) {
+  e.stopPropagation();
+  const q = QUESTS.find(q => q.id === questId);
+  if (q) q.tasks.forEach(t => { delete checked[t.id]; });
+  QUESTS = QUESTS.filter(q => q.id !== questId);
+  lsSet('gql-quests', JSON.stringify(QUESTS));
+  save(); render();
+}
+
+// ── ADD TASK TO EXISTING QUEST ────────────────────────────
+function showAddTaskInput(questId, btn) {
+  const row = btn.closest('.add-task-row');
+  const inp = row.querySelector('.add-task-input');
+  btn.style.display = 'none';
+  inp.style.display = 'block';
+  inp.focus();
+  inp.addEventListener('keydown', function handler(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const text = inp.value.trim();
+      if (text) {
+        for (const q of QUESTS) {
+          if (q.id === questId) {
+            q.tasks.push({ id: 't-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), text });
+            break;
+          }
+        }
+        lsSet('gql-quests', JSON.stringify(QUESTS));
+        save(); render();
+      } else {
+        inp.style.display = 'none';
+        btn.style.display = '';
+      }
+      inp.removeEventListener('keydown', handler);
+    }
+    if (e.key === 'Escape') {
+      inp.style.display = 'none';
+      btn.style.display = '';
+      inp.removeEventListener('keydown', handler);
+    }
+  });
+  inp.addEventListener('blur', function handler() {
+    setTimeout(() => { inp.style.display = 'none'; btn.style.display = ''; }, 150);
+    inp.removeEventListener('blur', handler);
   });
 }
 
