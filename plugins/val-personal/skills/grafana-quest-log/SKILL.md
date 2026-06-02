@@ -37,15 +37,21 @@ Ask the user: "What's on your plate? Brain dump everything — I'll organize it.
 
 Let them list everything in whatever format they want. Don't interrupt or ask clarifying questions until they're done.
 
-### Step 2 — Organize
-Group their items into logical quest categories (3–6 quests max). Each quest should have 2–8 tasks. Keep task text concise but clear.
+### Step 2 — Organize AND rewrite with flavor
 
-Naming conventions by tone (check `gql-tone` in the file or ask):
-- **epic**: Quest names like "The Weekly Campaign", "The Documentation Trial", "The Sync Ritual"
-- **chill**: Simple names like "Meetings", "Research", "Admin", "Team stuff"
-- **grot**: Names like "Grot's Mandates", "The Sacred Scrolls of Slack", "Grot Demands Action"
+Group their items into logical quest categories (3–6 quests max). Each quest should have 2–8 tasks.
 
-Show the organized list to the user and confirm before writing.
+**IMPORTANT: Do NOT use the user's exact words.** Transform the content with personality and tone:
+- Quest names should be evocative, not literal ("The Documentation Trial" not "Write docs")
+- Task text should have personality, not be a verbatim copy ("Negotiate the Slack backlog" not "reply to slack messages")
+- Make it feel fun — someone should smile reading their to-do list
+
+Naming and task conventions by tone:
+- **epic**: Quest names like "The Weekly Campaign", "The Documentation Trial", "The Sync Ritual". Tasks like "Vanquish the inbox backlog", "Forge the Q3 alignment doc", "Summon the cross-functional council"
+- **chill**: Relaxed but still punchy. Quests like "Inbox Stuff", "The Meeting Gauntlet", "Side Quest: Research". Tasks like "Send that thing to Sarah", "Block time for the big doc", "Figure out what's happening with X"
+- **grot**: Grot speaks. Quests like "Grot's Mandates", "The Sacred Scrolls of Slack", "Grot Demands These Done". Tasks like "Grot watches you write this doc", "Do not disappoint Grot with this meeting", "Grot has noted this is overdue"
+
+Show the organized, rewritten list to the user and confirm before writing.
 
 ### Step 3 — Write directly to the file
 
