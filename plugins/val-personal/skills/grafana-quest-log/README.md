@@ -1,12 +1,122 @@
-# Grafana Quest Log — Level Reference
+# Grafana Quest Log 🐸⚔️
 
-Complete level progression: title, XP threshold, Grot tier, and flavor text.
+A Grafana-themed DnD-style XP tracker that runs as a native macOS desktop app. Complete weekly quests to earn XP, level up through 100 tiers, and watch Grot evolve from baby blob to full knight.
 
-Grot upgrades every 2–3 levels (42 total tiers across 100 levels).
+---
 
+## What it is
 
-| Level | Title | XP | Grot | Flavor |
-|------:|-------|---:|:----:|--------|
+- **Self-contained HTML app** — all data (including Grot images) is embedded, no internet needed
+- **100 levels** with a power XP curve — early levels come fast, later ones take real effort
+- **42 Grot art tiers** — Grot's appearance upgrades every 2–3 levels as you progress
+- **Weekly quests** — tasks reset each week; total XP and level progress persists
+- **Completed task archiving** — finished tasks and quests collapse out of the way
+
+## Grot images
+
+The 42 Grot progression stickers were generated using **Ward's Build-a-Grot app**. The full armor progression goes from a plain baby Grot (grot-01) to an ultimate knight with cape and glowing sword (grot-42).
+
+> If you want to regenerate or extend the Grot tiers, ask Ward about the Build-a-Grot tool.
+
+---
+
+## Running the app
+
+### Option A — Open directly in a browser
+```
+open ~/Desktop/grafana-quest-log.html
+```
+
+### Option B — Run as a native macOS app
+The `.app` bundle wraps the HTML in a WKWebView window so it lives in your Dock.
+
+**Build from scratch:**
+```bash
+# 1. Compile the binary
+mkdir -p /tmp/gql-build
+cat > /tmp/gql-build/main.swift << 'SWIFT'
+import Cocoa
+import WebKit
+
+class AppDelegate: NSObject, NSApplicationDelegate {
+    var window: NSWindow!
+    var webView: WKWebView!
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let width: CGFloat = 820
+        let height: CGFloat = 900
+        let screenFrame = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        window = NSWindow(
+            contentRect: NSRect(x: screenFrame.midX - width/2, y: screenFrame.midY - height/2, width: width, height: height),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered, defer: false)
+        window.title = "Grafana Quest Log"
+        window.minSize = NSSize(width: 400, height: 500)
+        let config = WKWebViewConfiguration()
+        config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+        webView = WKWebView(frame: .zero, configuration: config)
+        webView.autoresizingMask = [.width, .height]
+        window.contentView = webView
+        let url = URL(fileURLWithPath: NSString(string: "~/Desktop/grafana-quest-log.html").expandingTildeInPath)
+        webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ app: NSApplication) -> Bool { return true }
+}
+
+let app = NSApplication.shared
+let delegate = AppDelegate()
+app.delegate = delegate
+app.setActivationPolicy(.regular)
+app.run()
+SWIFT
+swiftc /tmp/gql-build/main.swift -framework Cocoa -framework WebKit -o /tmp/gql-build/GrafanaQuestLogBin
+
+# 2. Bundle the app
+mkdir -p ~/Desktop/GrafanaQuestLog.app/Contents/{MacOS,Resources}
+cp /tmp/gql-build/GrafanaQuestLogBin ~/Desktop/GrafanaQuestLog.app/Contents/MacOS/GrafanaQuestLog
+chmod +x ~/Desktop/GrafanaQuestLog.app/Contents/MacOS/GrafanaQuestLog
+```
+
+Then drag `GrafanaQuestLog.app` from your Desktop into the Dock.
+
+---
+
+## Updating quests
+
+Quests live in the `const QUESTS = [...]` array near the top of `grafana-quest-log.html`. Each quest looks like:
+
+```js
+{
+  id: 'unique-id',
+  name: 'Quest Name',
+  icon: '🔥',
+  tasks: [
+    { id: 'task-1', text: 'Do the thing' },
+    { id: 'task-2', text: 'Do another thing' },
+  ]
+}
+```
+
+XP per task and quest completion bonus are set at the top of the script:
+```js
+const XP_TASK  = 50;   // XP per completed task
+const XP_QUEST = 200;  // bonus XP for finishing a whole quest
+const XP_ALL   = 500;  // bonus XP for completing everything
+```
+
+The `WEEK_KEY` constant (e.g. `'2026-W21'`) controls weekly resets — update it each week to reset task checkboxes while preserving total XP and level.
+
+---
+
+## Level progression
+
+Grot upgrades are marked with ⬆️. XP column is the total XP needed to *reach* that level.
+
+| Level | Title | XP to reach | Grot | Flavor |
+|------:|-------|------------:|:----:|--------|
 | 1 | Grot's Initiate | 0 | grot-01 ⬆️ | *Every legend starts somewhere. Grot is watching.* |
 | 2 | Dashboard Greenhorn | 50 | grot-01 | *You've clicked a panel. Progress.* |
 | 3 | Metric Muggle | 100 | grot-01 | *The dashboards speak, but you don't yet hear them.* |
