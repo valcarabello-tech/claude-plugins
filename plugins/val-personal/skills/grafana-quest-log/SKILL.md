@@ -1,11 +1,17 @@
 # Grafana Quest Log Skill
 
 ## Trigger phrases
+
+**Default phrases:**
 - "roll for initiative"
 - "update my quest log"
 - "add to my quest log"
 - "new quests"
 - "build my quest log"
+
+**Custom phrase:** The user may have set a custom trigger phrase during setup. It's stored as `gql-trigger-phrase` in the app's localStorage. If the user says something that matches their custom phrase (or anything that sounds like "let's do my tasks" / "time to work"), treat it as a trigger for this skill.
+
+When the skill runs, acknowledge the user's custom phrase if one is set — e.g. "Heard your command! Let's build your quests." — but don't require it.
 
 ## What this skill does
 
@@ -75,3 +81,5 @@ cp ~/Desktop/grafana-quest-log.html ~/claude-plugins/plugins/val-personal/skills
 - If the user says "clear my quests" or "start fresh", replace with an empty array `[]` — the wizard will show again on next load
 - XP, level, Grot tier, and checked tasks are NEVER touched — only the quest/task structure changes
 - If the user wants to ADD quests (not replace), read the current `SEED_QUESTS` value from the file first, then append to it
+- The user's custom trigger phrase is stored in the app's `localStorage` under `gql-trigger-phrase` — it's set during the wizard's first step or in the Settings panel. Claude cannot read localStorage directly, but the user chose their phrase and will use it to invoke this skill. Honor whatever phrase they use.
+- The user's player name is stored as `gql-player-name` and their tone as `gql-tone` — use these when organizing quests (e.g. epic/chill/grot naming conventions)
