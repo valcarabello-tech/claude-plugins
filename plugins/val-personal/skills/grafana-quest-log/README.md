@@ -14,9 +14,11 @@ A Grafana-themed DnD-style XP tracker that runs as a native macOS desktop app. C
 
 ## Grot images
 
-The 42 Grot progression stickers were generated using **Ward's Build-a-Grot app**. The full armor progression goes from a plain baby Grot (grot-01) to an ultimate knight with cape and glowing sword (grot-42).
+The 42 Grot progression stickers were generated using **[Build-A-Grot Workshop](https://grot.wardbekker.com/)**, built by Ward Bekker. It's an internal AI image generator that lets you describe a Grot adventure and renders it in various styles (cartoon, pixel art, cyberpunk, watercolor, and more) using either the 3D plush or 2D illustrated Grot as a reference.
 
-> If you want to regenerate or extend the Grot tiers, ask Ward about the Build-a-Grot tool.
+The tier sheet was generated with the **Cartoon/Anime** style using a prompt describing Grot's armor progression — starting as a plain baby blob and gradually adding armor pieces, weapons, and a cape until reaching full knight at tier 42.
+
+> To regenerate or extend the Grot tiers, visit [grot.wardbekker.com](https://grot.wardbekker.com/) (requires Grafana SSO). Join **#social-build-a-grot** on Slack to share creations and get inspiration.
 
 ---
 
