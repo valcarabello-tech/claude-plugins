@@ -190,6 +190,10 @@
   .task-item.done .task-grip{display:none !important;}
   .task-item.dragging{opacity:.35;background:rgba(244,104,0,.08);}
   .task-item.drag-over{outline:2px solid rgba(244,104,0,.6);outline-offset:-1px;border-radius:8px;}
+  .quest-grip-card{display:none;color:rgba(255,255,255,.2);cursor:grab;font-size:.9rem;flex-shrink:0;align-self:center;padding:0 4px 0 0;user-select:none;}
+  .quest-header:hover .quest-grip-card{display:block;}
+  .quest-card.quest-dragging{opacity:.35;}
+  .quest-card.quest-drag-over{outline:2px solid rgba(244,104,0,.6);outline-offset:-1px;border-radius:12px;}
   .quest-del-btn{display:none;background:none;border:none;color:rgba(255,80,80,.5);font-size:1.1rem;cursor:pointer;padding:0 4px;line-height:1;margin-left:4px;transition:color .15s;flex-shrink:0;}
   .quest-del-btn:hover{color:rgba(255,80,80,1);}
   .quest-header:hover .quest-del-btn{display:inline;}
@@ -414,12 +418,7 @@
     <div class="progress-bar-wrap">
       <div class="progress-bar-fill" id="overall-bar" style="width:0%"></div>
     </div>
-    <div class="io-buttons">
-      <button class="io-btn" id="export-btn" onclick="exportData()">Export Scroll</button>
-      <button class="io-btn" id="import-btn" onclick="document.getElementById('import-file').click()">Import Scroll</button>
-      <span id="export-nudge" style="display:none;font-size:.7rem;color:rgba(244,104,0,.7);align-self:center;margin-left:4px;" title="Export saves your XP, level, and progress to a file you can reimport later.">💾 Back up your progress</span>
-      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
-    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
   </div>
 
   <!-- Reward -->
@@ -699,13 +698,14 @@ if (storedWeek !== null && storedWeek !== WEEK_KEY) {
 lsSet('gql-week-key', WEEK_KEY);
 
 function save() {
-  localStorage.setItem('gql-checked',        JSON.stringify(checked));
-  localStorage.setItem('gql-open',           JSON.stringify(openState));
-  localStorage.setItem('gql-total-xp',       totalXp);
-  localStorage.setItem('gql-weekly-xp',      weeklyXp);
-  localStorage.setItem('gql-quest-bonuses',  JSON.stringify(questBonuses));
-  localStorage.setItem('gql-all-bonus',      allBonus);
-  localStorage.setItem('gql-total-quests',   totalQuestsCompleted);
+  lsSet('gql-checked',        JSON.stringify(checked));
+  lsSet('gql-open',           JSON.stringify(openState));
+  lsSet('gql-total-xp',       totalXp);
+  lsSet('gql-weekly-xp',      weeklyXp);
+  lsSet('gql-quest-bonuses',  JSON.stringify(questBonuses));
+  lsSet('gql-all-bonus',      allBonus);
+  lsSet('gql-total-quests',   totalQuestsCompleted);
+  backupToNative();
 }
 
 // ── DYNAMIC QUESTS ────────────────────────────────────────
@@ -931,13 +931,12 @@ function updateCharUI() {
     hintEl.innerHTML = '<span>✦ Max form reached</span>';
   }
 
-  // Export nudge: show if user has XP
-  const nudgeEl = document.getElementById('export-nudge');
-  if (nudgeEl) nudgeEl.style.display = (totalXp > 0) ? 'inline' : 'none';
-
-  // Export/import button labels
-  document.getElementById('export-btn').innerHTML = T.exportBtn;
-  document.getElementById('import-btn').innerHTML = T.importBtn;
+  // Auto-backup status in settings
+  const abStatus = document.getElementById('auto-backup-status');
+  if (abStatus) {
+    const lastBak = lsGet('gql-last-backup');
+    abStatus.textContent = lastBak ? 'Auto-saved · ' + new Date(+lastBak).toLocaleString() : 'Auto-saves every time you complete a task.';
+  }
 
   // Week label
   const playerName = localStorage.getItem('gql-player-name') || 'Adventurer';
@@ -1030,9 +1029,10 @@ function buildCard(quest) {
   card.innerHTML = `
     <div class="quest-header" data-quest="${quest.id}">
       <div class="quest-left">
+        <span class="quest-grip-card" data-qcard="${quest.id}" title="Drag to reorder">⠿</span>
         <span class="quest-icon">${quest.icon}</span>
         <div class="quest-name-wrap">
-          <div class="quest-name">${quest.name}</div>
+          <div class="quest-name" ondblclick="startEditQuestName('${quest.id}',this)" title="Double-click to rename">${quest.name}</div>
           <div class="quest-meta">
             <div class="quest-complete-badge">${T.questComplete}</div>
             <span class="quest-xp-tag">+${qxp} XP</span>
@@ -1163,6 +1163,7 @@ function attachListeners() {
   });
 
   attachDragListeners();
+  attachQuestDragListeners();
 
   document.querySelectorAll('.task-archive-toggle').forEach(el => {
     el.addEventListener('click', e => {
@@ -1836,6 +1837,93 @@ function showAddTaskInput(questId, btn) {
   });
 }
 
+// ── QUEST RENAME ──────────────────────────────────────────
+function startEditQuestName(questId, el) {
+  if (el.querySelector('input')) return;
+  const orig = el.textContent;
+  const inp = document.createElement('input');
+  inp.value = orig;
+  inp.style.cssText = 'background:rgba(255,255,255,.08);border:1px solid rgba(244,104,0,.5);border-radius:4px;color:var(--yellow-light);padding:2px 6px;font-size:.82rem;width:100%;letter-spacing:.06em;outline:none;text-transform:uppercase;';
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    if (e.key === 'Escape') { el.textContent = orig; }
+    e.stopPropagation();
+  });
+  inp.addEventListener('click', e => e.stopPropagation());
+  inp.addEventListener('blur', () => {
+    const newName = inp.value.trim() || orig;
+    for (const q of QUESTS) {
+      if (q.id === questId) { q.name = newName; break; }
+    }
+    lsSet('gql-quests', JSON.stringify(QUESTS));
+    save(); render();
+  });
+  el.textContent = '';
+  el.appendChild(inp);
+  inp.focus(); inp.select();
+}
+
+// ── QUEST REORDER ─────────────────────────────────────────
+let _dragQSrcId = null;
+
+function attachQuestDragListeners() {
+  document.querySelectorAll('.quest-grip-card').forEach(grip => {
+    const card = grip.closest('.quest-card');
+    if (!card) return;
+    const questId = grip.dataset.qcard;
+    grip.setAttribute('draggable', 'true');
+
+    grip.addEventListener('dragstart', e => {
+      _dragQSrcId = questId;
+      _dragSrcTid = null; // not a task drag
+      card.classList.add('quest-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setDragImage(card, 20, 20);
+      e.stopPropagation();
+    });
+    grip.addEventListener('dragend', () => {
+      card.classList.remove('quest-dragging');
+      document.querySelectorAll('.quest-card').forEach(c => c.classList.remove('quest-drag-over'));
+      _dragQSrcId = null;
+    });
+
+    card.addEventListener('dragover', e => {
+      if (!_dragQSrcId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.quest-card').forEach(c => c.classList.remove('quest-drag-over'));
+      if (card.id !== 'quest-' + _dragQSrcId) card.classList.add('quest-drag-over');
+    });
+    card.addEventListener('drop', e => {
+      if (!_dragQSrcId) return;
+      e.stopPropagation();
+      const dropId = card.id.replace('quest-', '');
+      if (_dragQSrcId === dropId) return;
+      const srcIdx = QUESTS.findIndex(q => q.id === _dragQSrcId);
+      const dropIdx = QUESTS.findIndex(q => q.id === dropId);
+      if (srcIdx < 0 || dropIdx < 0) return;
+      const [moved] = QUESTS.splice(srcIdx, 1);
+      QUESTS.splice(dropIdx, 0, moved);
+      lsSet('gql-quests', JSON.stringify(QUESTS));
+      save(); render();
+    });
+  });
+}
+
+// ── AUTO-BACKUP TO NATIVE APP ─────────────────────────────
+function backupToNative() {
+  try {
+    if (!window.webkit?.messageHandlers?.saveBackup) return;
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('gql-')) data[k] = localStorage.getItem(k);
+    }
+    window.webkit.messageHandlers.saveBackup.postMessage(JSON.stringify(data));
+    lsSet('gql-last-backup', String(Date.now()));
+  } catch(e) {}
+}
+
 </script>
 
 <div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;align-items:center;justify-content:center;">
@@ -1855,6 +1943,13 @@ function showAddTaskInput(questId, btn) {
       <button onclick="copyTriggerPhrase()" id="copy-phrase-btn" title="Copy phrase" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-muted);padding:0 14px;cursor:pointer;font-size:.9rem;white-space:nowrap;flex-shrink:0;">Copy</button>
     </div>
     <p style="font-size:.72rem;color:var(--text-muted);margin:-14px 0 16px;opacity:.7;">The phrase you say in Claude to update your quest log.</p>
+
+    <label style="display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase;">Data</label>
+    <div id="auto-backup-status" style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px;opacity:.7;"></div>
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <button id="export-btn" onclick="exportData()" style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:var(--text-muted);padding:8px;border-radius:8px;cursor:pointer;font-size:.82rem;">⬇ Export backup</button>
+      <button id="import-btn" onclick="document.getElementById('import-file').click()" style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:var(--text-muted);padding:8px;border-radius:8px;cursor:pointer;font-size:.82rem;">⬆ Import backup</button>
+    </div>
 
     <div id="xp-history-section" style="margin-bottom:20px;display:none;">
       <label style="display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase;">XP History</label>
