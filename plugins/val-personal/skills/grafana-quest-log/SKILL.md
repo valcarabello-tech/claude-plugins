@@ -55,7 +55,7 @@ Show the organized, rewritten list to the user and confirm before writing.
 
 ### Step 3 — Write directly to the file
 
-Read `/Users/valmartin/Desktop/grafana-quest-log.html` and replace exactly this line:
+Find the HTML file at `~/Desktop/grafana-quest-log.html` (expand `~` to the user's actual home directory). Replace exactly this line:
 ```
 const SEED_QUESTS = null; // ROLL_FOR_INITIATIVE
 ```
@@ -72,9 +72,11 @@ const SEED_QUESTS = [{"id":"q-1","name":"Quest Name","icon":"⚔️","tasks":[{"
 - Do NOT modify XP, level, or checked task data — only the quest/task structure changes
 - Icons to rotate through: ⚔️ 🔥 🛡️ 📜 🗺️ 💀 🧙‍♂️ 🏆 🌟 💫
 
-Also copy the updated file to the repo:
-```
-cp ~/Desktop/grafana-quest-log.html ~/claude-plugins/plugins/val-personal/skills/grafana-quest-log/grafana-quest-log.html
+If the user has a local `~/claude-plugins/` repo with this skill in it, also sync the file:
+```bash
+if [ -d ~/claude-plugins/plugins/val-personal/skills/grafana-quest-log ]; then
+  cp ~/Desktop/grafana-quest-log.html ~/claude-plugins/plugins/val-personal/skills/grafana-quest-log/grafana-quest-log.html
+fi
 ```
 
 ### Step 4 — Tell the user
