@@ -1365,10 +1365,45 @@ function selectSettingsTone(tone, el) {
 }
 
 function resetApp() {
-  if (confirm('Reset everything? This clears your quests, XP, and progress. Cannot be undone.')) {
-    Object.keys(localStorage).filter(k => k.startsWith('gql-')).forEach(k => localStorage.removeItem(k));
-    location.reload();
+  if (!confirm('Reset everything? This clears your quests, XP, and progress. Cannot be undone.')) return;
+
+  // Clear all gql-* keys from localStorage
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('gql-')) keys.push(k);
   }
+  keys.forEach(k => lsRemove(k));
+
+  // Reset in-memory state
+  checked = {}; openState = {}; totalXp = 0; weeklyXp = 0;
+  questBonuses = []; allBonus = false; totalQuestsCompleted = 0;
+  QUESTS = [];
+
+  // Close settings panel
+  closeSettings();
+
+  // Hide main app, show wizard
+  document.getElementById('main-app').style.display = 'none';
+  const wiz = document.getElementById('wizard');
+  wiz.classList.remove('hidden');
+
+  // Reset wizard back to step 0
+  wizardStep = 0;
+  wizardTone = null;
+  for (let i = 0; i < 3; i++) {
+    document.getElementById('wstep-' + i).classList.toggle('active', i === 0);
+    const dot = document.getElementById('wdot-' + i);
+    dot.classList.toggle('active', i === 0);
+    dot.classList.remove('done');
+  }
+  document.getElementById('wizard-name').value = '';
+  document.getElementById('wizard-trigger').value = '';
+  document.getElementById('wbtn-0').disabled = true;
+  document.querySelectorAll('.tone-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('tone-preview').textContent = 'Select a vibe to preview...';
+  document.getElementById('wbtn-1').disabled = true;
+  document.getElementById('wizard-grot-img').src = GROT_TIERS[0];
 }
 
 function saveSettings() {
