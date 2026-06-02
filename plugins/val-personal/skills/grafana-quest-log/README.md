@@ -1,146 +1,129 @@
-# Grafana Quest Log 🐸⚔️
+# Grafana Quest Log ⚔️
 
-A Grafana-themed DnD-style XP tracker that runs as a native macOS desktop app. Complete weekly quests to earn XP, level up through 100 tiers, and watch Grot evolve from baby blob to full knight.
+A Grafana-themed DnD-style XP tracker. Complete weekly quests, earn XP, level up through 100 tiers, and watch Grot evolve from baby blob to full armored knight.
 
 ---
 
 ## What it is
 
-- **Self-contained HTML app** — all data (including Grot images) is embedded, no internet needed
+- **Self-contained HTML file** — everything is embedded, no internet or server needed
 - **100 levels** with a power XP curve — early levels come fast, later ones take real effort
-- **42 Grot art tiers** — Grot's appearance upgrades every 2–3 levels as you progress
-- **Weekly quests** — tasks reset each week; total XP and level progress persists
-- **Completed task archiving** — finished tasks and quests collapse out of the way
+- **42 Grot art tiers** — Grot's appearance upgrades every 2–3 levels
+- **Weekly quests** — tasks reset each week; XP and level persist forever
+- **Two ways to manage quests** — via Claude (brain dump → formatted quests) or directly in the app
+
+---
 
 ## Grot images
 
-The 42 Grot progression stickers were generated using **[Build-A-Grot Workshop](https://grot.wardbekker.com/)**, built by Ward Bekker. It's an internal AI image generator that lets you describe a Grot adventure and renders it in various styles (cartoon, pixel art, cyberpunk, watercolor, and more) using either the 3D plush or 2D illustrated Grot as a reference.
+The 42 Grot progression stickers were generated using **[Build-A-Grot Workshop](https://grot.wardbekker.com/)**, built by Ward Bekker. It's an internal Grafana AI image generator that renders Grot in various styles (cartoon, pixel art, cyberpunk, watercolor, and more).
 
-The tier sheet was generated with the **Cartoon/Anime** style using a prompt describing Grot's armor progression — starting as a plain baby blob and gradually adding armor pieces, weapons, and a cape until reaching full knight at tier 42.
-
-> To regenerate or extend the Grot tiers, visit [grot.wardbekker.com](https://grot.wardbekker.com/) (requires Grafana SSO). Join **#social-build-a-grot** on Slack to share creations and get inspiration.
+> To regenerate or customize the Grot tiers, visit [grot.wardbekker.com](https://grot.wardbekker.com/) (requires Grafana SSO). Join **#social-build-a-grot** on Slack.
 
 ---
 
 ## Getting started
 
-### Step 1 — Download the HTML file
-Download `grafana-quest-log.html` from this repo and save it to `~/Desktop/`.
+### Option A — Browser only (quickest, any OS)
 
-### Step 2 — Open in a browser (quickest)
+1. Download `grafana-quest-log.html` from this repo
+2. Save it to `~/Desktop/` (the app reads it from here — don't move it)
+3. Open it: `open ~/Desktop/grafana-quest-log.html`
+4. The setup wizard walks you through name, tone, and first quests
+
+### Option B — Native macOS app (recommended, lives in your Dock)
+
+**Easiest: use the pre-built app**
+
+1. Download `grafana-quest-log.html` → save to `~/Desktop/`
+2. Download `GrafanaQuestLog.app.zip` from this repo → unzip → move `GrafanaQuestLog.app` to your Desktop (or Applications)
+3. **Right-click → Open → Open** (Gatekeeper warning because the app isn't code-signed — you only do this once)
+4. Drag `GrafanaQuestLog.app` into your Dock
+
+The pre-built binary is **universal** (works on Apple Silicon and Intel Macs).
+
+**Or build it yourself** (if you want to recompile from source):
 ```bash
-open ~/Desktop/grafana-quest-log.html
+mkdir -p /tmp/gql-build && curl -o /tmp/gql-build/main.swift   https://raw.githubusercontent.com/your-org/claude-plugins/grafana-quest-log/plugins/val-personal/skills/grafana-quest-log/main.swift
+
+swiftc /tmp/gql-build/main.swift -framework Cocoa -framework WebKit   -target arm64-apple-macos12   -o /tmp/gql-build/gql_arm64
+swiftc /tmp/gql-build/main.swift -framework Cocoa -framework WebKit   -target x86_64-apple-macos12  -o /tmp/gql-build/gql_x86
+lipo -create /tmp/gql-build/gql_arm64 /tmp/gql-build/gql_x86   -output ~/Desktop/GrafanaQuestLog.app/Contents/MacOS/GrafanaQuestLog
 ```
-On first load you'll see a setup wizard — enter your name, pick a tone (Epic / Chill / Grot Mode), set your trigger phrase, and add your first quests.
-
-### Step 3 — Build the macOS app (optional but recommended)
-The `.app` wraps the HTML in a native window so it lives in your Dock.
-
-```bash
-# Compile the binary
-mkdir -p /tmp/gql-build
-cat > /tmp/gql-build/main.swift << 'SWIFT'
-import Cocoa
-import WebKit
-
-class AppDelegate: NSObject, NSApplicationDelegate {
-    var window: NSWindow!
-    var webView: WKWebView!
-
-    func applicationDidFinishLaunching(_ notification: Notification) {
-        let width: CGFloat = 820
-        let height: CGFloat = 900
-        let screenFrame = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
-        window = NSWindow(
-            contentRect: NSRect(x: screenFrame.midX - width/2, y: screenFrame.midY - height/2, width: width, height: height),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
-            backing: .buffered, defer: false)
-        window.title = "Grafana Quest Log"
-        window.minSize = NSSize(width: 400, height: 500)
-        let config = WKWebViewConfiguration()
-        config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-        config.websiteDataStore = WKWebsiteDataStore.default()
-        webView = WKWebView(frame: .zero, configuration: config)
-        webView.autoresizingMask = [.width, .height]
-        window.contentView = webView
-        let htmlPath = NSString(string: "~/Desktop/grafana-quest-log.html").expandingTildeInPath
-        let baseURL = URL(fileURLWithPath: NSString(string: "~/Desktop/").expandingTildeInPath)
-        if let html = try? String(contentsOfFile: htmlPath, encoding: .utf8) {
-            webView.loadHTMLString(html, baseURL: baseURL)
-        } else {
-            webView.loadHTMLString("<body style='background:#111;color:#f46800;font-family:sans-serif;padding:40px'><h2>Could not load grafana-quest-log.html</h2><p>Make sure the file exists at ~/Desktop/grafana-quest-log.html</p></body>", baseURL: nil)
-        }
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    func applicationShouldTerminateAfterLastWindowClosed(_ app: NSApplication) -> Bool { return true }
-}
-
-let app = NSApplication.shared
-let delegate = AppDelegate()
-app.delegate = delegate
-app.setActivationPolicy(.regular)
-app.run()
-SWIFT
-
-swiftc /tmp/gql-build/main.swift -framework Cocoa -framework WebKit -o /tmp/gql-build/GrafanaQuestLogBin
-
-# Bundle the app
-mkdir -p ~/Desktop/GrafanaQuestLog.app/Contents/{MacOS,Resources}
-cp /tmp/gql-build/GrafanaQuestLogBin ~/Desktop/GrafanaQuestLog.app/Contents/MacOS/GrafanaQuestLog
-chmod +x ~/Desktop/GrafanaQuestLog.app/Contents/MacOS/GrafanaQuestLog
-
-# Create Info.plist
-cat > ~/Desktop/GrafanaQuestLog.app/Contents/Info.plist << 'PLIST'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>CFBundleExecutable</key><string>GrafanaQuestLog</string>
-  <key>CFBundleIdentifier</key><string>com.grafana.quest-log</string>
-  <key>CFBundleName</key><string>Grafana Quest Log</string>
-  <key>CFBundleDisplayName</key><string>Grafana Quest Log</string>
-  <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleVersion</key><string>1.0</string>
-  <key>NSHighResolutionCapable</key><true/>
-</dict>
-</plist>
-PLIST
-```
-
-Then drag `GrafanaQuestLog.app` from your Desktop into the Dock.
-
-> **macOS Gatekeeper warning?** Right-click the app → **Open** → click Open again. You only need to do this once.
 
 ---
 
-## Updating quests via Claude
+## Sharing with coworkers
 
-The quest log is designed to be updated through Claude. During setup, you choose a **trigger phrase** (e.g. "roll for initiative", "time to slay", "grot demands action") — say it to Claude and it runs the skill.
+Send them two files:
+1. `grafana-quest-log.html` — must be saved to their `~/Desktop/`
+2. `GrafanaQuestLog.app.zip` — unzip, right-click → Open, drag to Dock
 
-**How it works:**
+That's it. No install, no account, no internet. First launch opens the setup wizard.
 
-1. Say your trigger phrase to Claude (or any of: "update my quest log", "new quests", "build my quest log")
-2. Claude asks: *"What's on your plate? Brain dump everything."*
-3. You list everything — Claude organizes it into quest categories
-4. Claude shows you a preview and asks you to confirm
-5. Claude edits `~/Desktop/grafana-quest-log.html` directly — you just **refresh the page** and your quests appear
-
-Your XP, level, Grot tier, and completed tasks are never touched — only the quest/task structure changes.
-
-> **Want to change your tone or name after setup?** Click the ⚙️ gear icon in the top right.
-
-> **Need to re-run the setup wizard?** Open the ⚙️ settings panel → scroll to the bottom → **Reset App**.
+**Windows / Linux:** Just the HTML file opened in any modern browser. Pin the browser tab or use `--app=` flag in Chrome/Edge to open as a standalone window.
 
 ---
 
-## Windows / Linux
+## Managing quests
 
-The `.app` bundle is macOS-only, but the HTML file works on any OS in any modern browser.
+### Via Claude (brain dump → formatted quests)
 
-- **Windows**: Double-click `grafana-quest-log.html` (opens in Edge/Chrome). To pin to taskbar: open it, right-click the Chrome/Edge taskbar icon → "Pin to taskbar", then rename the shortcut to "Grafana Quest Log".
-- **Linux**: `xdg-open ~/Desktop/grafana-quest-log.html`. For a launcher, create a `.desktop` file pointing to `chromium --app=file:///home/you/Desktop/grafana-quest-log.html`.
+You set a **trigger phrase** during setup (e.g. "update grot", "roll for initiative"). Say it to Claude:
+
+1. Claude asks: *"What's on your plate? Brain dump everything."*
+2. You list everything in plain language
+3. Claude rewrites it into themed quests and tasks matching your tone
+4. Claude shows a preview — you confirm
+5. Claude edits the HTML file directly. Refresh the page → quests appear.
+
+Your XP, level, and Grot are never touched — only the quest structure changes.
+
+### Directly in the app
+
+You can also manage quests without Claude at any time:
+
+| Action | How |
+|--------|-----|
+| Add tasks to a quest | Expand quest → click **+ add task** at bottom |
+| Edit a task | Double-click the task text |
+| Delete a task | Hover task → click **×** |
+| Rename a quest | Double-click the quest name |
+| Reorder tasks | Hover task → drag **⠿** grip |
+| Reorder quests | Hover quest header → drag **⠿** grip |
+| Delete a quest | Hover quest header → click **×** |
+| Add new quests when done | Click **⚔️ Add New Quests** in the complete banner |
+| Change name / tone / phrase | Click **⚙️** gear top-right |
+| Reset everything | ⚙️ → **Reset App** (two clicks to confirm) |
+
+---
+
+## Data & backups
+
+### How data is stored
+
+All progress (XP, level, quests, checked tasks) lives in browser `localStorage`. The macOS app also writes an automatic backup to:
+```
+~/Library/Application Support/GrafanaQuestLog/backup.json
+```
+This backup is updated every time you complete a task, and is automatically restored if localStorage is empty on next launch (e.g. after clearing browser data).
+
+### What can go wrong
+
+| Situation | What happens | How to protect yourself |
+|-----------|-------------|------------------------|
+| Browser cache cleared | All progress lost | Use the app (auto-backup) or export manually via ⚙️ → Data |
+| Opened in incognito / private window | No localStorage — starts fresh every session | Don't use incognito |
+| Switched browsers (Chrome → Safari) | Different localStorage — starts over | Stick to one browser, or export/import via ⚙️ → Data |
+| New Mac or OS reinstall | App Support backup may not transfer | Export before migrating: ⚙️ → Data → **Export backup** |
+| Moved the HTML file off Desktop | App shows error, can't load | Keep `grafana-quest-log.html` on `~/Desktop/` |
+| Cleared App Support folder | Auto-backup gone | Export from ⚙️ → Data regularly if you want an off-device backup |
+
+### Manual export / import
+
+In ⚙️ Settings → **Data** section:
+- **Export backup** — downloads a `.json` file with all your progress
+- **Import backup** — restores from a previously exported file
 
 ---
 
@@ -148,11 +131,13 @@ The `.app` bundle is macOS-only, but the HTML file works on any OS in any modern
 
 | Problem | Fix |
 |---------|-----|
-| App shows white screen | Make sure `grafana-quest-log.html` is on your Desktop. Rebuild the binary using the commands above — the binary must be recompiled if you're on a new machine. |
-| "App is damaged" / Gatekeeper warning | Right-click → Open → Open. This happens because the binary isn't code-signed. |
-| Quests disappeared after refresh | They're still there — the week auto-detects via ISO week number. If they're gone, Claude may have written new SEED_QUESTS. Check the ⚙️ settings. |
-| Lost XP / level reset | XP and level are stored in `localStorage`. Clearing browser data or using a different browser will reset them. Use **Export Scroll** (in the ⚙️ panel) to back up. |
-| Wizard shows again after quests set | Someone clicked "Reset App" or localStorage was cleared. Run your trigger phrase with Claude to restore quests. |
+| Gatekeeper blocks the app | Right-click → **Open** → click Open. One-time only. |
+| App shows blank / error | Make sure `grafana-quest-log.html` is on `~/Desktop/` (not Documents, Downloads, etc.) |
+| Nothing is clickable | Quit fully and reopen. If still broken, open the HTML in a browser to verify it's working. |
+| Quests disappeared | Week auto-detects — quests don't reset. If gone, check ⚙️ Settings. The backup in App Support may have restored an older set. |
+| XP reset to zero | localStorage was cleared. If using the app, relaunch — the backup should restore. If browser, use Import in ⚙️ → Data. |
+| Wizard appeared again | Reset App was clicked, or localStorage was cleared. Use your trigger phrase with Claude or ⚔️ Add New Quests to reload. |
+| App title still shows "Grafana Quest Log" | Your name hasn't been set yet — complete the wizard or update it in ⚙️. |
 
 ---
 
