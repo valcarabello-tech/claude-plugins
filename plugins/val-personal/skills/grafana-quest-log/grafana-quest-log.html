@@ -356,6 +356,7 @@
   <!-- Character Card -->
   <div class="char-card">
     <div class="char-top">
+      <img class="grot-img" src="" alt="Grot">
       <div class="level-badge">
         <div class="level-num" id="char-level">1</div>
         <div class="level-lbl">Level</div>
@@ -646,20 +647,31 @@ const TONE_COPY = {
   }
 };
 
-// ── STATE ─────────────────────────────────────────────────
-let checked      = JSON.parse(localStorage.getItem('gql-checked')       || '{}');
-let openState    = JSON.parse(localStorage.getItem('gql-open')           || '{}');
-let totalXp      = parseInt(localStorage.getItem('gql-total-xp')        || '0');
-let weeklyXp     = parseInt(localStorage.getItem('gql-weekly-xp')       || '0');
-let questBonuses = JSON.parse(localStorage.getItem('gql-quest-bonuses') || '[]');
-let allBonus     = localStorage.getItem('gql-all-bonus') === 'true';
-let totalQuestsCompleted = parseInt(localStorage.getItem('gql-total-quests') || '0');
+// ── LOCALSTORAGE WRAPPER (safe for WKWebView / file:// restrictions) ──
+function lsGet(key, fallback) {
+  try { return localStorage.getItem(key); } catch(e) { return null; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(key, val); } catch(e) {}
+}
+function lsRemove(key) {
+  try { localStorage.removeItem(key); } catch(e) {}
+}
 
-const storedWeek = localStorage.getItem('gql-week-key');
+// ── STATE ─────────────────────────────────────────────────
+let checked      = JSON.parse(lsGet('gql-checked')       || '{}');
+let openState    = JSON.parse(lsGet('gql-open')           || '{}');
+let totalXp      = parseInt(lsGet('gql-total-xp')        || '0');
+let weeklyXp     = parseInt(lsGet('gql-weekly-xp')       || '0');
+let questBonuses = JSON.parse(lsGet('gql-quest-bonuses') || '[]');
+let allBonus     = lsGet('gql-all-bonus') === 'true';
+let totalQuestsCompleted = parseInt(lsGet('gql-total-quests') || '0');
+
+const storedWeek = lsGet('gql-week-key');
 if (storedWeek !== null && storedWeek !== WEEK_KEY) {
   weeklyXp = 0; questBonuses = []; allBonus = false; checked = {}; openState = {};
 }
-localStorage.setItem('gql-week-key', WEEK_KEY);
+lsSet('gql-week-key', WEEK_KEY);
 
 function save() {
   localStorage.setItem('gql-checked',        JSON.stringify(checked));
