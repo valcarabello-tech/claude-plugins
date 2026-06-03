@@ -722,7 +722,7 @@ function save() {
 let QUESTS = [];
 
 function loadQuests() {
-  const stored = localStorage.getItem('gql-quests');
+  const stored = lsGet('gql-quests');
   if (stored) {
     try { QUESTS = JSON.parse(stored); } catch(e) { QUESTS = []; }
   }
@@ -744,7 +744,7 @@ function exportData() {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key && key.startsWith('gql-')) {
-      data[key] = localStorage.getItem(key);
+      data[key] = lsGet(key);
     }
   }
   const json = JSON.stringify(data, null, 2);
@@ -766,7 +766,7 @@ function importData(event) {
       const data = JSON.parse(e.target.result);
       for (const key in data) {
         if (key.startsWith('gql-')) {
-          localStorage.setItem(key, data[key]);
+          lsSet(key, data[key]);
         }
       }
       location.reload();
@@ -859,7 +859,7 @@ function _badgePop(newLevel){
 }
 
 function showLevelUp(level) {
-  const currentTone = localStorage.getItem('gql-tone') || 'epic';
+  const currentTone = lsGet('gql-tone') || 'epic';
   const T = TONE_COPY[currentTone];
   const ld = LEVELS.find(l => l.level === level) || LEVELS[LEVELS.length-1];
   document.getElementById('levelup-sub').textContent = T.levelUp(level);
@@ -910,7 +910,7 @@ function getLevelData(xp) {
 
 // ── UPDATE CHARACTER UI ───────────────────────────────────
 function updateCharUI() {
-  const currentTone = localStorage.getItem('gql-tone') || 'epic';
+  const currentTone = lsGet('gql-tone') || 'epic';
   const T = TONE_COPY[currentTone];
   const { current, next } = getLevelData(totalXp);
   document.getElementById('char-level').textContent = current.level;
@@ -949,7 +949,7 @@ function updateCharUI() {
   }
 
   // Week label
-  const playerName = localStorage.getItem('gql-player-name') || 'Adventurer';
+  const playerName = lsGet('gql-player-name') || 'Adventurer';
   document.getElementById('week-label').textContent = T.weekLabel(playerName);
 
   // Sparkle rows — tone aware
@@ -959,7 +959,7 @@ function updateCharUI() {
   const sparkles = {
     epic:  ['⚔️ ✦ ⚔️ ✦ ⚔️', '🗡️ ✦ 🛡️ ✦ 🗡️'],
     chill: ['✨ · ✨ · ✨',   '💫 · 🌟 · 💫'],
-    grot:  ['⚔️ ✦ 👁️ ✦ ⚔️', '🛡️ ✦ 👁️ ✦ 🛡️']
+    grot:  ['⚔️ ✦ 💀 ✦ ⚔️', '🛡️ ✦ 💀 ✦ 🛡️']
   };
   const sp = sparkles[currentTone] || sparkles.epic;
   if (sparkleTop) sparkleTop.innerHTML = sp[0];
@@ -983,7 +983,7 @@ function updateCharUI() {
 
 // ── BUILD CARD ────────────────────────────────────────────
 function buildCard(quest) {
-  const currentTone = localStorage.getItem('gql-tone') || 'epic';
+  const currentTone = lsGet('gql-tone') || 'epic';
   const T = TONE_COPY[currentTone];
   const {total, done} = countItems(quest);
   const pct   = total>0 ? Math.round(done/total*100) : 0;
@@ -1029,7 +1029,7 @@ function buildCard(quest) {
     }
   }
 
-  const tarcOpen = localStorage.getItem('gql-tarc-' + quest.id) === 'true';
+  const tarcOpen = lsGet('gql-tarc-' + quest.id) === 'true';
   const archiveHtml = doneCount > 0 ? `
     <div class="task-archive-toggle ${tarcOpen?'open':''}" data-qarc="${quest.id}">
       <span class="tarc-chevron">▼</span>${doneCount} completed
@@ -1067,7 +1067,7 @@ function buildCard(quest) {
 
 // ── RENDER ────────────────────────────────────────────────
 function render() {
-  const currentTone = localStorage.getItem('gql-tone') || 'epic';
+  const currentTone = lsGet('gql-tone') || 'epic';
   const T = TONE_COPY[currentTone];
   const container = document.getElementById('quests');
   container.innerHTML = '';
@@ -1084,7 +1084,7 @@ function render() {
   for (const card of active) container.appendChild(card);
 
   if (archived.length > 0) {
-    const arcOpen = localStorage.getItem('gql-arc-open') === 'true';
+    const arcOpen = lsGet('gql-arc-open') === 'true';
     const toggle = document.createElement('div');
     toggle.className = 'archive-toggle' + (arcOpen ? ' open' : '');
     toggle.innerHTML = `<span class="arc-chevron">▼</span><span>Archived quests (${archived.length})</span><span style="font-size:.7rem;opacity:.5;margin-left:8px;font-weight:400;">completed this week</span>`;
@@ -1092,7 +1092,7 @@ function render() {
       const isNowOpen = !toggle.classList.contains('open');
       toggle.classList.toggle('open', isNowOpen);
       section.classList.toggle('open', isNowOpen);
-      localStorage.setItem('gql-arc-open', isNowOpen);
+      lsSet('gql-arc-open', isNowOpen);
     });
     const section = document.createElement('div');
     section.className = 'archive-section' + (arcOpen ? ' open' : '');
@@ -1182,7 +1182,7 @@ function attachListeners() {
       const isNowOpen = !el.classList.contains('open');
       el.classList.toggle('open', isNowOpen);
       document.querySelector(`.task-archive-list[data-qarclist="${qid}"]`).classList.toggle('open', isNowOpen);
-      localStorage.setItem('gql-tarc-' + qid, isNowOpen);
+      lsSet('gql-tarc-' + qid, isNowOpen);
     });
   });
 }
@@ -1354,18 +1354,18 @@ function launchApp() {
 
   if (quests.length === 0) return;
 
-  localStorage.setItem('gql-player-name', name);
+  lsSet('gql-player-name', name);
   const triggerPhrase = document.getElementById('wizard-trigger').value.trim();
-  if (triggerPhrase) localStorage.setItem('gql-trigger-phrase', triggerPhrase);
-  localStorage.setItem('gql-tone', wizardTone || 'epic');
-  localStorage.setItem('gql-quests', JSON.stringify(quests));
-  localStorage.setItem('gql-setup-done', 'true');
+  if (triggerPhrase) lsSet('gql-trigger-phrase', triggerPhrase);
+  lsSet('gql-tone', wizardTone || 'epic');
+  lsSet('gql-quests', JSON.stringify(quests));
+  lsSet('gql-setup-done', 'true');
 
   document.getElementById('wizard').classList.add('hidden');
   document.getElementById('main-app').style.display = '';
   QUESTS = quests;
   const _launchTone = TONE_COPY[wizardTone || 'epic'];
-  const _launchName = localStorage.getItem('gql-player-name') || 'Adventurer';
+  const _launchName = lsGet('gql-player-name') || 'Adventurer';
   document.getElementById('week-label').textContent = _launchTone.weekLabel(_launchName);
   render();
 }
@@ -1450,9 +1450,9 @@ function openSettings() {
   } else {
     histSection.style.display = 'none';
   }
-  document.getElementById('settings-name').value = localStorage.getItem('gql-player-name') || '';
-  document.getElementById('settings-trigger').value = localStorage.getItem('gql-trigger-phrase') || '';
-  settingsTone = localStorage.getItem('gql-tone') || 'epic';
+  document.getElementById('settings-name').value = lsGet('gql-player-name') || '';
+  document.getElementById('settings-trigger').value = lsGet('gql-trigger-phrase') || '';
+  settingsTone = lsGet('gql-tone') || 'epic';
   document.querySelectorAll('.tone-setting-btn').forEach(btn => {
     btn.style.borderColor = btn.dataset.tone === settingsTone ? '#F46800' : 'transparent';
     btn.style.background = btn.dataset.tone === settingsTone ? 'rgba(244,104,0,.2)' : 'rgba(255,255,255,.07)';
@@ -1565,19 +1565,19 @@ document.getElementById('wizard-name').addEventListener('keydown', function(e) {
 // Set wizard Grot image to first tier
 document.getElementById('wizard-grot-img').src = GROT_TIERS[0];
 
-const setupDone = localStorage.getItem('gql-setup-done') === 'true';
+const setupDone = lsGet('gql-setup-done') === 'true';
 if (setupDone) {
   loadQuests();
   if (QUESTS.length > 0) {
     document.getElementById('wizard').classList.add('hidden');
     document.getElementById('main-app').style.display = '';
-    const _initTone = TONE_COPY[localStorage.getItem('gql-tone') || 'epic'];
-    const _initName = localStorage.getItem('gql-player-name') || 'Adventurer';
+    const _initTone = TONE_COPY[lsGet('gql-tone') || 'epic'];
+    const _initName = lsGet('gql-player-name') || 'Adventurer';
     document.getElementById('week-label').textContent = _initTone.weekLabel(_initName);
     render();
   } else {
     // setup-done but no quests — show wizard anyway
-    localStorage.removeItem('gql-setup-done');
+    lsRemove('gql-setup-done');
   }
 }
 // else: wizard stays visible (default)
@@ -1927,7 +1927,7 @@ function backupToNative() {
     const data = {};
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && k.startsWith('gql-')) data[k] = localStorage.getItem(k);
+      if (k && k.startsWith('gql-')) data[k] = lsGet(k);
     }
     window.webkit.messageHandlers.saveBackup.postMessage(JSON.stringify(data));
     lsSet('gql-last-backup', String(Date.now()));
