@@ -185,7 +185,7 @@
   .task-del-btn:hover{color:rgba(255,80,80,1);}
   .task-item:hover .task-del-btn{display:block;}
   .task-item.done .task-del-btn{display:none !important;}
-  .task-grip{display:none;color:rgba(255,255,255,.2);cursor:grab;font-size:.85rem;flex-shrink:0;align-self:center;padding:0 2px;user-select:none;}
+  .task-grip{display:none;color:rgba(255,255,255,.25);cursor:grab;font-size:.85rem;user-select:none;position:absolute;left:4px;top:50%;transform:translateY(-50%);}
   .task-item:hover .task-grip{display:block;}
   .task-item.done .task-grip{display:none !important;}
   .task-item.dragging{opacity:.35;background:rgba(244,104,0,.08);}
@@ -366,7 +366,10 @@
 
 <div class="content" id="main-app" style="display:none;">
   <div class="header" style="position:relative;">
-    <button id="settings-btn" onclick="openSettings()" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--text-muted);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;" onmouseover="this.style.color='#F46800'" onmouseout="this.style.color=''">⚙️</button>
+    <div style="position:absolute;top:12px;right:14px;display:flex;gap:6px;">
+      <button onclick="reloadFromDisk()" title="Reload quest log (⌘R)" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--text-muted);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s;" onmouseover="this.style.color='#F46800'" onmouseout="this.style.color=''">↺</button>
+      <button id="settings-btn" onclick="openSettings()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--text-muted);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;" onmouseover="this.style.color='#F46800'" onmouseout="this.style.color=''">⚙️</button>
+    </div>
     <div class="sparkle-row" id="sparkle-top">⚔️ ✦ ⚔️ ✦ ⚔️</div>
     <img class="grot-img" src="" alt="Grot" style="min-width:110px;min-height:110px;">
     <div class="header-title" id="app-title">Quest Log</div>
@@ -648,7 +651,7 @@ const TONE_COPY = {
     questComplete: '✦ QUEST COMPLETE ✦',
     allDone: '⚔️ All quests vanquished! Glory is yours.',
     levelUp: level => `You have ascended to Level ${level}!`,
-    nextGrot: level => `Next form unlocks at Level ${level}`,
+    nextGrot: level => `Grot levels up at Level ${level}`,
     exportBtn: 'Export Scroll',
     importBtn: 'Import Scroll',
   },
@@ -657,7 +660,7 @@ const TONE_COPY = {
     questComplete: '✓ DONE',
     allDone: '🎉 Everything\'s done. Nice work.',
     levelUp: level => `Level ${level} — you got there.`,
-    nextGrot: level => `Grot upgrades at level ${level}`,
+    nextGrot: level => `Grot levels up at Level ${level}`,
     exportBtn: 'Export',
     importBtn: 'Import',
   },
@@ -666,7 +669,7 @@ const TONE_COPY = {
     questComplete: '<img class="grot-inline" src=""> GROT APPROVES ✦',
     allDone: '<img class="grot-inline" src=""> Grot has seen all. Grot is satisfied.',
     levelUp: level => `Grot has grown. Level ${level}.`,
-    nextGrot: level => `Grot transforms at Level ${level}`,
+    nextGrot: level => `Grot levels up at Level ${level}`,
     exportBtn: '<img class="grot-inline" src=""> Export Scroll',
     importBtn: '<img class="grot-inline" src=""> Import Scroll',
   }
@@ -956,7 +959,7 @@ function updateCharUI() {
   const sparkles = {
     epic:  ['⚔️ ✦ ⚔️ ✦ ⚔️', '🗡️ ✦ 🛡️ ✦ 🗡️'],
     chill: ['✨ · ✨ · ✨',   '💫 · 🌟 · 💫'],
-    grot:  [gi2+' ✦ '+gi2+' ✦ '+gi2, gi2+' ✦ '+gi2+' ✦ '+gi2]
+    grot:  ['⚔️ ✦ 👁️ ✦ ⚔️', '🛡️ ✦ 👁️ ✦ 🛡️']
   };
   const sp = sparkles[currentTone] || sparkles.epic;
   if (sparkleTop) sparkleTop.innerHTML = sp[0];
@@ -1056,7 +1059,7 @@ function buildCard(quest) {
     <div class="task-list">${activeTH}${archiveHtml}
       <div class="add-task-row" data-aqid="${quest.id}">
         <button class="add-task-btn" onclick="showAddTaskInput('${quest.id}',this)">+ add task</button>
-        <input class="add-task-input" style="display:none" placeholder="Quick capture — say your trigger phrase for styled quests" data-aqid="${quest.id}">
+        <input class="add-task-input" style="display:none" placeholder="New task... (plain text — use your trigger phrase in Claude for styled quests)" data-aqid="${quest.id}">
       </div>
     </div>`;
   return { card, total, done, isC };
@@ -1524,11 +1527,11 @@ function resetApp() {
 
 function saveSettings() {
   const name = document.getElementById('settings-name').value.trim() || 'Adventurer';
-  localStorage.setItem('gql-player-name', name);
-  localStorage.setItem('gql-tone', settingsTone || 'epic');
+  lsSet('gql-player-name', name);
+  lsSet('gql-tone', settingsTone || 'epic');
   const newTrigger = document.getElementById('settings-trigger').value.trim();
-  if (newTrigger) localStorage.setItem('gql-trigger-phrase', newTrigger);
-  else localStorage.removeItem('gql-trigger-phrase');
+  if (newTrigger) lsSet('gql-trigger-phrase', newTrigger);
+  else lsRemove('gql-trigger-phrase');
   closeSettings();
   render();
 }
@@ -1928,6 +1931,16 @@ function backupToNative() {
     }
     window.webkit.messageHandlers.saveBackup.postMessage(JSON.stringify(data));
     lsSet('gql-last-backup', String(Date.now()));
+  } catch(e) {}
+}
+
+// ── RELOAD FROM DISK (↺ button / ⌘R) ─────────────────────
+function reloadFromDisk() {
+  // In the native app, Swift listens for this message and re-reads the HTML file
+  try {
+    if (window.webkit?.messageHandlers?.reload) {
+      window.webkit.messageHandlers.reload.postMessage(null);
+    }
   } catch(e) {}
 }
 
