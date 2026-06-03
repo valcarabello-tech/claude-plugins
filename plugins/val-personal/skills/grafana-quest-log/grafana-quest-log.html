@@ -371,11 +371,9 @@
       <button onclick="reloadFromDisk()" title="Reload quest log (⌘R)" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--text-muted);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s;" onmouseover="this.style.color='#F46800'" onmouseout="this.style.color=''">↺</button>
       <button id="settings-btn" onclick="openSettings()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--text-muted);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;" onmouseover="this.style.color='#F46800'" onmouseout="this.style.color=''">⚙️</button>
     </div>
-    <div class="sparkle-row" id="sparkle-top">⚔️ ✦ ⚔️ ✦ ⚔️</div>
     <img class="grot-img" src="" alt="Grot" style="min-width:110px;min-height:110px;">
     <div class="header-title" id="app-title">Quest Log</div>
     <div class="header-sub" id="week-label">Loading...</div>
-    <div class="sparkle-row" id="sparkle-bot">🗡️ ✦ 🛡️ ✦ 🗡️</div>
   </div>
 
   <!-- Character Card -->
@@ -953,18 +951,7 @@ function updateCharUI() {
   const playerName = lsGet('gql-player-name') || 'Adventurer';
   document.getElementById('week-label').textContent = T.weekLabel(playerName);
 
-  // Sparkle rows — tone aware
-  const sparkleTop = document.getElementById('sparkle-top');
-  const sparkleBot = document.getElementById('sparkle-bot');
-  const gi2 = '<img class="grot-inline" src="">';
-  const sparkles = {
-    epic:  ['⚔️ ✦ ⚔️ ✦ ⚔️', '🗡️ ✦ 🛡️ ✦ 🗡️'],
-    chill: ['✨ · ✨ · ✨',   '💫 · 🌟 · 💫'],
-    grot:  ['⚔️ ✦ 💀 ✦ ⚔️', '🛡️ ✦ 💀 ✦ 🛡️']
-  };
-  const sp = sparkles[currentTone] || sparkles.epic;
-  if (sparkleTop) sparkleTop.innerHTML = sp[0];
-  if (sparkleBot) sparkleBot.innerHTML = sp[1];
+
 
   // Window title with player name
   document.title = playerName ? 'Grafana Quest Log · ' + playerName : 'Grafana Quest Log';
@@ -1060,7 +1047,7 @@ function buildCard(quest) {
     <div class="task-list">${activeTH}${archiveHtml}
       <div class="add-task-row" data-aqid="${quest.id}">
         <button class="add-task-btn" onclick="showAddTaskInput('${quest.id}',this)">+ add task</button>
-        <input class="add-task-input" style="display:none" placeholder="New task... (plain text — use your trigger phrase in Claude for styled quests)" data-aqid="${quest.id}">
+        <input class="add-task-input" style="display:none" placeholder="New task... (say your trigger phrase in Claude to make it epic)" data-aqid="${quest.id}">
       </div>
     </div>`;
   return { card, total, done, isC };
@@ -1227,7 +1214,7 @@ function selectTone(tone, el) {
   // Show phrase options for chosen tone
   const picker = document.getElementById('wizard-phrase-picker');
   if (picker) picker.style.display = 'block';
-  renderPhraseOptions('wizard-phrase-options', tone, wizardSelectedPhrase, p => { wizardSelectedPhrase = p; });
+  renderPhraseOptions('wizard-phrase-options', tone);
   document.querySelectorAll('.tone-card').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   document.getElementById('tone-preview').innerHTML = TONE_PREVIEWS[tone];
@@ -1457,10 +1444,9 @@ function openSettings() {
   }
   document.getElementById('settings-name').value = lsGet('gql-player-name') || '';
   // Populate phrase options for current tone
-  const _tone = settingsTone || lsGet('gql-tone') || 'epic';
-  const _currentPhrase = lsGet('gql-trigger-phrase') || TRIGGER_PHRASES[_tone][0];
-  renderPhraseOptions('settings-phrase-options', _tone, _currentPhrase, p => { lsSet('gql-trigger-phrase', p); });
-  document.getElementById('settings-trigger').value = lsGet('gql-trigger-phrase') || '';
+  const _stTone = settingsTone || lsGet('gql-tone') || 'epic';
+  renderPhraseOptions('settings-phrase-options', _stTone);
+
   settingsTone = lsGet('gql-tone') || 'epic';
   document.querySelectorAll('.tone-setting-btn').forEach(btn => {
     btn.style.borderColor = btn.dataset.tone === settingsTone ? '#F46800' : 'transparent';
@@ -1473,13 +1459,7 @@ function closeSettings() {
 }
 
 function selectSettingsTone(tone, el) {
-  // Re-render phrase options for the newly selected tone
-  (() => {
-    const _p = lsGet('gql-trigger-phrase');
-    const opts = TRIGGER_PHRASES[tone] || TRIGGER_PHRASES.epic;
-    const _current = opts.includes(_p) ? _p : opts[0];
-    renderPhraseOptions('settings-phrase-options', tone, _current, p => { lsSet('gql-trigger-phrase', p); });
-  })();
+  renderPhraseOptions('settings-phrase-options', tone);
   settingsTone = tone;
   document.querySelectorAll('.tone-setting-btn').forEach(btn => {
     btn.style.borderColor = btn.dataset.tone === tone ? '#F46800' : 'transparent';
@@ -1963,21 +1943,41 @@ const TRIGGER_PHRASES = {
 };
 
 let wizardSelectedPhrase = null;
+let _phrasePickerTone = 'epic';
+let _phrasePickerTarget = 'wizard'; // 'wizard' or 'settings'
 
-function renderPhraseOptions(containerId, tone, currentPhrase, onSelect) {
+function renderPhraseOptions(containerId, tone) {
   const container = document.getElementById(containerId);
   if (!container) return;
+  _phrasePickerTone = tone;
+  _phrasePickerTarget = containerId === 'wizard-phrase-options' ? 'wizard' : 'settings';
   const options = TRIGGER_PHRASES[tone] || TRIGGER_PHRASES.epic;
-  // Auto-select first if nothing selected yet
-  if (!currentPhrase || !options.includes(currentPhrase)) {
-    currentPhrase = options[0];
-    onSelect(currentPhrase);
+  const current = _phrasePickerTarget === 'wizard'
+    ? (wizardSelectedPhrase || options[0])
+    : (lsGet('gql-trigger-phrase') || options[0]);
+  // Ensure default is saved
+  if (_phrasePickerTarget === 'settings' && !lsGet('gql-trigger-phrase')) {
+    lsSet('gql-trigger-phrase', options[0]);
+  } else if (_phrasePickerTarget === 'wizard' && !wizardSelectedPhrase) {
+    wizardSelectedPhrase = options[0];
   }
-  container.innerHTML = options.map(p => `
-    <button onclick="(${onSelect.toString()})('${p.replace(/'/g, "\'")}'); renderPhraseOptions('${containerId}', '${tone}', '${p.replace(/'/g, "\'")}', ${onSelect.toString()})"
-      style="text-align:left;background:${p === currentPhrase ? 'rgba(244,104,0,.18)' : 'rgba(255,255,255,.05)'};border:1.5px solid ${p === currentPhrase ? 'var(--orange)' : 'rgba(255,255,255,.1)'};color:${p === currentPhrase ? 'var(--orange)' : 'var(--text-muted)'};border-radius:8px;padding:8px 14px;cursor:pointer;font-size:.85rem;transition:all .15s;font-family:inherit;">
-      ${p === currentPhrase ? '◉' : '○'} ${p}
-    </button>`).join('');
+  container.innerHTML = options.map(p => {
+    const sel = p === current;
+    return `<button onclick="pickPhrase('${p.replace(/'/g, "&apos;")}')"
+      style="text-align:left;background:${sel ? 'rgba(244,104,0,.18)' : 'rgba(255,255,255,.05)'};border:1.5px solid ${sel ? 'var(--orange)' : 'rgba(255,255,255,.1)'};color:${sel ? 'var(--orange)' : 'var(--text-muted)'};border-radius:8px;padding:8px 14px;cursor:pointer;font-size:.85rem;transition:all .15s;font-family:inherit;">
+      ${sel ? '◉' : '○'} ${p}
+    </button>`;
+  }).join('');
+}
+
+function pickPhrase(phrase) {
+  if (_phrasePickerTarget === 'wizard') {
+    wizardSelectedPhrase = phrase;
+    renderPhraseOptions('wizard-phrase-options', _phrasePickerTone);
+  } else {
+    lsSet('gql-trigger-phrase', phrase);
+    renderPhraseOptions('settings-phrase-options', _phrasePickerTone);
+  }
 }
 
 </script>
@@ -2032,7 +2032,7 @@ function renderPhraseOptions(containerId, tone, currentPhrase, onSelect) {
     <div id="add-text-mode">
       <textarea id="add-text-input" placeholder="## Work Stuff&#10;Reply to Amir about the launch&#10;Finish the Q3 doc&#10;&#10;## Learning&#10;Watch the new observability video" style="width:100%;min-height:180px;background:rgba(255,255,255,.06);border:1px solid rgba(244,104,0,.3);border-radius:10px;color:#fff;padding:12px;font-size:.9rem;line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
       <p style="font-size:.75rem;color:var(--text-muted);margin:6px 0 0;">Use <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">## Heading</code> to group tasks into quests.</p>
-      <p style="font-size:.75rem;color:rgba(244,104,0,.6);margin:6px 0 0;">⚔️ Want epic quest names and styled task text? Say your trigger phrase to Claude instead — it rewrites everything in your tone.</p>
+      <p style="font-size:.75rem;color:rgba(244,104,0,.6);margin:6px 0 0;">⚔️ For quest names with real flair, say your trigger phrase to Claude — it rewrites everything in your tone.</p>
     </div>
 
     <div id="add-form-mode" style="display:none">
