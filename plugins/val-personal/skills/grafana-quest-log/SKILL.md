@@ -2,16 +2,29 @@
 
 ## Trigger phrases
 
-**Default phrases:**
+Users pick their phrase from a fixed list during setup. All valid phrases:
+
+**Epic tone:**
 - "roll for initiative"
+- "sound the war horn"
+- "the campaign begins"
+
+**Chill tone:**
+- "let's get it"
+- "what's on the plate"
+- "time to sort things out"
+
+**Grot Mode:**
+- "update grot"
+- "grot demands action"
+- "grot is watching"
+
+**Also always triggers this skill:**
 - "update my quest log"
-- "add to my quest log"
 - "new quests"
 - "build my quest log"
 
-**Custom phrase:** The user may have set a custom trigger phrase during setup. It's stored as `gql-trigger-phrase` in the app's localStorage. If the user says something that matches their custom phrase (or anything that sounds like "let's do my tasks" / "time to work"), treat it as a trigger for this skill.
-
-When the skill runs, acknowledge the user's custom phrase if one is set — e.g. "Heard your command! Let's build your quests." — but don't require it.
+The user's chosen phrase is stored as `gql-trigger-phrase` in the app. Claude can't read it directly, but since all valid phrases are listed above, Claude will always recognize them. Acknowledge the phrase warmly when the skill runs — e.g. *"The war horn sounds! What's on your plate this week?"*
 
 ## What this skill does
 
