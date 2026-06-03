@@ -1056,7 +1056,7 @@ function buildCard(quest) {
     <div class="task-list">${activeTH}${archiveHtml}
       <div class="add-task-row" data-aqid="${quest.id}">
         <button class="add-task-btn" onclick="showAddTaskInput('${quest.id}',this)">+ add task</button>
-        <input class="add-task-input" style="display:none" placeholder="New task… (Enter to add)" data-aqid="${quest.id}">
+        <input class="add-task-input" style="display:none" placeholder="Quick capture — say your trigger phrase for styled quests" data-aqid="${quest.id}">
       </div>
     </div>`;
   return { card, total, done, isC };
@@ -1974,7 +1974,7 @@ function backupToNative() {
 <div id="add-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:600;align-items:center;justify-content:center;">
   <div style="background:#1a1b20;border:1px solid rgba(244,104,0,.3);border-radius:16px;padding:28px;width:min(560px,92vw);max-height:88vh;overflow-y:auto;">
     <h2 style="font-family:var(--font-display);color:var(--yellow);margin:0 0 6px;font-size:1.4rem;">Add New Quests</h2>
-    <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 18px;">Add to your existing quest log, or replace everything.</p>
+    <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 18px;">Quick capture — text is saved as-is. For themed quest names and styled tasks, use your trigger phrase with Claude.</p>
 
     <div style="display:flex;gap:8px;margin-bottom:14px;">
       <button class="btoggle active" id="add-btoggle-text" onclick="setAddMode('text')">Quick Text</button>
@@ -1984,6 +1984,7 @@ function backupToNative() {
     <div id="add-text-mode">
       <textarea id="add-text-input" placeholder="## Work Stuff&#10;Reply to Amir about the launch&#10;Finish the Q3 doc&#10;&#10;## Learning&#10;Watch the new observability video" style="width:100%;min-height:180px;background:rgba(255,255,255,.06);border:1px solid rgba(244,104,0,.3);border-radius:10px;color:#fff;padding:12px;font-size:.9rem;line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
       <p style="font-size:.75rem;color:var(--text-muted);margin:6px 0 0;">Use <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">## Heading</code> to group tasks into quests.</p>
+      <p style="font-size:.75rem;color:rgba(244,104,0,.6);margin:6px 0 0;">⚔️ Want epic quest names and styled task text? Say your trigger phrase to Claude instead — it rewrites everything in your tone.</p>
     </div>
 
     <div id="add-form-mode" style="display:none">
