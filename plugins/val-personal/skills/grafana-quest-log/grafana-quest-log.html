@@ -368,6 +368,7 @@
 <div class="content" id="main-app" style="display:none;">
   <div class="header" style="position:relative;">
     <div style="position:absolute;top:12px;right:14px;display:flex;gap:6px;">
+      <button id="copy-summary-btn" onclick="copyWeeklySummary()" title="Copy weekly summary to clipboard" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--text-muted);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s;" onmouseover="this.style.color='#F46800'" onmouseout="this.style.color=''">📋</button>
       <button onclick="reloadFromDisk()" title="Reload quest log (⌘R)" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--text-muted);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s;" onmouseover="this.style.color='#F46800'" onmouseout="this.style.color=''">↺</button>
       <button id="settings-btn" onclick="openSettings()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--text-muted);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;" onmouseover="this.style.color='#F46800'" onmouseout="this.style.color=''">⚙️</button>
     </div>
@@ -1569,6 +1570,62 @@ function saveSettings() {
   // Trigger phrase is already saved live when user selects it in the picker
   closeSettings();
   render();
+}
+
+// ── WEEKLY SUMMARY COPY ──────────────────────────────────
+function copyWeeklySummary() {
+  const tone     = lsGet('gql-tone') || 'epic';
+  const name     = lsGet('gql-player-name') || 'Adventurer';
+  const level    = getLevelData(totalXp).current.level;
+  const ld       = getLevelData(totalXp);
+  const weekNum  = WEEK_KEY.split('-W')[1] || '?';
+  const tasksDone  = Object.keys(checked).length;
+  const questsDone = questBonuses.length;
+  const xpStr    = weeklyXp.toLocaleString();
+  const NL = '\n';
+
+  let nextLine = '';
+  if (ld.next) {
+    const xpIn  = totalXp - ld.current.xp;
+    const xpFor = ld.next.xp - ld.current.xp;
+    nextLine = ' (' + xpIn + '/' + xpFor + ' XP to Level ' + (level + 1) + ')';
+  }
+
+  const qStr = questsDone ? ' · ' + questsDone + ' quest' + (questsDone !== 1 ? 's' : '') : '';
+  const tStr = tasksDone + ' task' + (tasksDone !== 1 ? 's' : '');
+
+  let summary;
+  if (tone === 'epic') {
+    summary = [
+      '⚔️ ' + name + "'s Week " + weekNum + ' Campaign Report',
+      'Tasks slain: ' + tStr + (questsDone ? qStr + ' completed' : ''),
+      'XP earned: +' + xpStr + ' · Level ' + level + nextLine
+    ].join(NL);
+  } else if (tone === 'chill') {
+    summary = [
+      '📋 ' + name + ' — Week ' + weekNum + ' wrap-up',
+      'Done: ' + tStr + (questsDone ? qStr + ' finished' : ''),
+      '+' + xpStr + ' XP · Level ' + level
+    ].join(NL);
+  } else {
+    summary = [
+      '👁️ Grot\'s Report — ' + name + ', Week ' + weekNum,
+      'Completed: ' + tStr + (questsDone ? qStr : ''),
+      '+' + xpStr + ' XP · Level ' + level,
+      'Grot is ' + (tasksDone > 5 ? '... satisfied.' : 'watching.')
+    ].join(NL);
+  }
+
+  const btn = document.getElementById('copy-summary-btn');
+  navigator.clipboard.writeText(summary).then(function() {
+    if (btn) {
+      btn.textContent = '✓';
+      btn.style.color = '#73bf69';
+      setTimeout(function() { btn.textContent = '📋'; btn.style.color = ''; }, 1800);
+    }
+  }).catch(function() {
+    if (btn) { btn.textContent = '!'; setTimeout(function() { btn.textContent = '📋'; }, 1500); }
+  });
 }
 
 // ── GROT GALLERY ──────────────────────────────────────────
