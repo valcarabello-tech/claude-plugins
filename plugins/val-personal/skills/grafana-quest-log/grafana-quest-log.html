@@ -551,6 +551,14 @@ const LEVELS = [
   try {
     localStorage.setItem('__gql_ls_test__','1');
     localStorage.removeItem('__gql_ls_test__');
+    // Restore from native app backup if localStorage appears empty (e.g. after WKWebView data clear)
+    if (window.GQL_BACKUP && !localStorage.getItem('gql-week-key')) {
+      try {
+        for (const k in window.GQL_BACKUP) {
+          if (k.startsWith('gql-')) localStorage.setItem(k, String(window.GQL_BACKUP[k]));
+        }
+      } catch(e2) {}
+    }
   } catch(e) {
     const _m = {};
     Object.defineProperty(window, 'localStorage', {
@@ -682,6 +690,25 @@ function lsSet(key, val) {
 }
 function lsRemove(key) {
   try { localStorage.removeItem(key); } catch(e) {}
+}
+
+// ── TONE-AWARE TEXT HELPERS ──────────────────────────────
+// A task/quest name can be a plain string OR {epic:"...",chill:"...",grot:"..."}
+// toneText() resolves to the right version for the current tone.
+function toneText(val, tone) {
+  if (!val && val !== 0) return '';
+  if (typeof val === 'string') return val;
+  return val[tone] || val.epic || val.chill || val.grot || Object.values(val)[0] || '';
+}
+// setToneText() updates only the current-tone version, preserving others.
+function setToneText(val, tone, newText) {
+  if (typeof val === 'string') {
+    // Collapse single string to multi-tone, keeping old text for other tones
+    const obj = { epic: val, chill: val, grot: val };
+    obj[tone] = newText;
+    return obj;
+  }
+  return Object.assign({}, val, { [tone]: newText });
 }
 
 // ── STATE ─────────────────────────────────────────────────
@@ -994,11 +1021,11 @@ function buildCard(quest) {
       const pd = allSubsDone(t);
       const block = `<div class="task-item ${pd?'done':''}" data-task="${t.id}" data-parent="true">
           <div class="task-cb"><span class="task-cb-check">✓</span></div>
-          <div class="task-text">${t.text}</div>
+          <div class="task-text">${toneText(t.text, currentTone)}</div>
         </div><div class="subtask-list">` +
         t.subtasks.map(s => `<div class="subtask-item ${checked[s.id]?'done':''}" data-subtask="${s.id}">
             <div class="subtask-cb"><span class="subtask-cb-check">✓</span></div>
-            <div class="subtask-text">${s.text}</div>
+            <div class="subtask-text">${toneText(s.text, currentTone)}</div>
             <span class="subtask-xp">+${XP_SUBTASK}</span>
           </div>`).join('') + '</div>';
       if (pd) { doneTH += block; doneCount++; }
@@ -1007,7 +1034,7 @@ function buildCard(quest) {
       const block = `<div class="task-item ${checked[t.id]?'done':''}" data-task="${t.id}" data-qid="${quest.id}" draggable="true">
           <span class="task-grip">⠿</span>
           <div class="task-cb"><span class="task-cb-check">✓</span></div>
-          <div class="task-text" ondblclick="startEditTask('${quest.id}','${t.id}',this)">${t.text}</div>
+          <div class="task-text" ondblclick="startEditTask('${quest.id}','${t.id}',this)">${toneText(t.text, currentTone)}</div>
           <span class="task-xp">+${XP_TASK}</span>
           <button class="task-del-btn" onclick="deleteTask('${quest.id}','${t.id}',event)" title="Remove task">×</button>
         </div>`;
@@ -1029,7 +1056,7 @@ function buildCard(quest) {
         <span class="quest-grip-card" data-qcard="${quest.id}" title="Drag to reorder">⠿</span>
         <span class="quest-icon">${quest.icon}</span>
         <div class="quest-name-wrap">
-          <div class="quest-name" ondblclick="startEditQuestName('${quest.id}',this)" title="Double-click to rename">${quest.name}</div>
+          <div class="quest-name" ondblclick="startEditQuestName('${quest.id}',this)" title="Double-click to rename">${toneText(quest.name, currentTone)}</div>
           <div class="quest-meta">
             <div class="quest-complete-badge">${T.questComplete}</div>
             <span class="quest-xp-tag">+${qxp} XP</span>
@@ -1744,7 +1771,7 @@ function startEditTask(questId, taskId, el) {
     for (const q of QUESTS) {
       if (q.id === questId) {
         const t = q.tasks.find(t => t.id === taskId);
-        if (t) t.text = newText;
+        if (t) t.text = setToneText(t.text, lsGet('gql-tone') || 'epic', newText);
         break;
       }
     }
@@ -1914,7 +1941,7 @@ function startEditQuestName(questId, el) {
   inp.addEventListener('blur', () => {
     const newName = inp.value.trim() || orig;
     for (const q of QUESTS) {
-      if (q.id === questId) { q.name = newName; break; }
+      if (q.id === questId) { q.name = setToneText(q.name, lsGet('gql-tone') || 'epic', newName); break; }
     }
     lsSet('gql-quests', JSON.stringify(QUESTS));
     save(); render();

@@ -50,27 +50,31 @@ Ask the user: "What's on your plate? Brain dump everything — I'll organize it.
 
 Let them list everything in whatever format they want. Don't interrupt or ask clarifying questions until they're done.
 
-### Step 2 — Organize AND rewrite with flavor
+### Step 2 — Organize AND rewrite with flavor IN ALL THREE TONES
 
-‼️ **REWRITE EVERYTHING. Do not copy the user's words verbatim. This is the whole point.**
+‼️ **REWRITE EVERYTHING IN ALL THREE TONES. Do not copy the user's words verbatim. This is the whole point.**
 
-If the user says "reply to slack messages" and you write "reply to slack messages" — that's a failure. Every single quest name and task must be transformed.
+Every quest name and task must have three versions: epic, chill, and grot. The user can switch between them instantly in Settings — tone switching now swaps ALL text, not just the header chrome.
 
-Group into 3–6 quests. Each quest gets 2–8 tasks. Then rewrite every word:
+Group into 3–6 quests. Each quest gets 2–8 tasks. Write all three tone versions for every name and task:
 
-**By tone — quest names:**
-- **epic**: "The Weekly Campaign", "The Documentation Trial", "The Sync Ritual", "The Speaker Series Gambit"
-- **chill**: "Inbox Stuff", "The Meeting Gauntlet", "Side Quest: Research", "Comms & Chaos"
-- **grot**: "Grot's Mandates", "The Sacred Scrolls of Slack", "Grot Demands These Done"
+**Quest names by tone:**
+| User's task | epic | chill | grot |
+|---|---|---|---|
+| "weekly work" | "The Weekly Campaign" | "This Week's Stuff" | "Grot's Mandates" |
+| "write docs" | "The Documentation Trial" | "Write Some Docs" | "The Sacred Scrolls" |
+| "meetings" | "The Sync Ritual" | "Meeting Gauntlet" | "Grot Attends These" |
 
-**By tone — task text:**
-- **epic**: "Vanquish the inbox backlog", "Forge the Q3 alignment doc", "Summon the cross-functional council", "Inscribe the Register of Champions", "Dispatch the Battle Plans"
-- **chill**: "Send that thing to Sarah", "Block time for the big doc", "Figure out what's happening with X", "Loop in the team"
-- **grot**: "Grot watches you write this doc", "Do not disappoint Grot with this meeting", "Grot has noted this is overdue", "Grot demands a response by EOD"
+**Task text by tone:**
+| User's task | epic | chill | grot |
+|---|---|---|---|
+| "reply to slack" | "Vanquish the inbox backlog" | "Clear the Slack pile" | "Grot demands a response by EOD" |
+| "write doc" | "Forge the alignment scroll" | "Write that doc" | "Grot watches you type this" |
+| "team meeting" | "Summon the cross-functional council" | "Do the team meeting" | "Do not disappoint Grot with this" |
 
-**The bar:** Read back the rewritten list and ask yourself — would someone smile reading this? If it sounds like a plain to-do list, rewrite it again.
+**The bar:** Each epic version should make someone smile. Each chill version should be casual and real. Each grot version should feel watched.
 
-Show the rewritten list to the user and confirm before writing.
+Show the rewritten list (one tone preview — user's current tone) and confirm before writing.
 
 ### Step 3 — Write directly to the file
 
@@ -81,7 +85,7 @@ const SEED_QUESTS = null; // ROLL_FOR_INITIATIVE
 
 With the quests array on the same line, keeping the comment:
 ```
-const SEED_QUESTS = [{"id":"q-1","name":"Quest Name","icon":"⚔️","tasks":[{"id":"t-1-1","text":"Task description"},{"id":"t-1-2","text":"Another task"}]},{"id":"q-2","name":"Another Quest","icon":"🔥","tasks":[{"id":"t-2-1","text":"Task here"}]}]; // ROLL_FOR_INITIATIVE
+const SEED_QUESTS = [{"id":"q-1","name":{"epic":"The Weekly Campaign","chill":"This Week's Stuff","grot":"Grot's Mandates"},"icon":"⚔️","tasks":[{"id":"t-1-1","text":{"epic":"Vanquish the inbox backlog","chill":"Clear the inbox","grot":"Grot demands inbox cleared"}},{"id":"t-1-2","text":{"epic":"Forge the alignment scroll","chill":"Write that doc","grot":"Grot watches you type this"}}]},{"id":"q-2","name":{"epic":"The Sync Ritual","chill":"Meeting Gauntlet","grot":"Grot Attends These"},"icon":"🔥","tasks":[{"id":"t-2-1","text":{"epic":"Summon the cross-functional council","chill":"Do the team meeting","grot":"Do not disappoint Grot with this"}}]}]; // ROLL_FOR_INITIATIVE
 ```
 
 **Important rules:**
@@ -111,4 +115,6 @@ fi
 - The user's custom trigger phrase is stored in the app's `localStorage` under `gql-trigger-phrase` — it's set during the wizard's first step or in the Settings panel. Claude cannot read localStorage directly, but the user chose their phrase and will use it to invoke this skill. Honor whatever phrase they use.
 - The user's player name is stored as `gql-player-name` and their tone as `gql-tone` — use these when organizing quests (e.g. epic/chill/grot naming conventions)
 - **Hash check**: The app uses a content hash to detect when SEED_QUESTS is new vs already applied — so in-app edits (rename, reorder, add tasks) are preserved across relaunches. Writing genuinely different quest content means the hash changes and the new quests will apply. No extra steps needed.
-- **In-app editing**: Users can also manage quests directly in the app without Claude — add tasks to existing quests, rename quests, reorder quests/tasks via drag, delete tasks or whole quests. Mention this if they ask how to make small changes.
+- **In-app editing**: Users can also manage quests directly in the app without Claude — add tasks to existing quests, rename quests, reorder quests/tasks via drag, delete tasks or whole quests. In-app edits update the current-tone version only (other tones are preserved). Mention this if they ask how to make small changes.
+- **Tone-switching**: Quest names and task text are now stored as `{epic, chill, grot}` objects. Switching tone in Settings instantly swaps ALL text — no reload needed. If the user says "rewrite my quests in grot mode" (or similar), rewrite all three tones and change their saved tone to grot too: add `lsSet('gql-tone','grot')` is NOT possible from Claude — but note that the user should also update their tone in Settings to see the grot wording.
+- **"Rewrite in [tone] mode"**: If a user asks to switch tone via Claude, write all 3 tone versions (as always) and remind them to also go to Settings → Tone and save to update the UI chrome.
