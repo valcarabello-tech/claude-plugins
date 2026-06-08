@@ -88,7 +88,7 @@ Then tell the user:
 > "When you open it for the first time, a setup wizard will appear. It'll ask for:
 > - **Your name** — shows up in the header and window title
 > - **Your vibe** — Epic (DnD quests), Chill (simple task list), or Grot Mode (Grot judges you)
-> - **A trigger phrase** — the phrase you'll say to me to update your quests (anything you want: 'update grot', 'let's go', 'time to slay')
+> - **A trigger phrase** — pick from a list of pre-set phrases that match your vibe (e.g. *"Roll for initiative"* for epic, *"Let's get it"* for chill, *"Update Grot"* for Grot mode)
 > - **Your first quests** — either type them in Quick Text mode or use the form builder
 >
 > After setup, just say your trigger phrase to me whenever you want to update your task list."

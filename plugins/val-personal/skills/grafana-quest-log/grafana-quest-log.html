@@ -1595,23 +1595,24 @@ function copyWeeklySummary() {
   const tStr = tasksDone + ' task' + (tasksDone !== 1 ? 's' : '');
 
   let summary;
+  const lvTitle = getLevelData(totalXp).current.title || '';
   if (tone === 'epic') {
     summary = [
       '⚔️ ' + name + "'s Week " + weekNum + ' Campaign Report',
       'Tasks slain: ' + tStr + (questsDone ? qStr + ' completed' : ''),
-      'XP earned: +' + xpStr + ' · Level ' + level + nextLine
+      'XP earned: +' + xpStr + ' · Level ' + level + (lvTitle ? ' — ' + lvTitle : '') + nextLine
     ].join(NL);
   } else if (tone === 'chill') {
     summary = [
-      '📋 ' + name + ' — Week ' + weekNum + ' wrap-up',
+      '✌️ ' + name + ' — Week ' + weekNum + ' wrap-up',
       'Done: ' + tStr + (questsDone ? qStr + ' finished' : ''),
-      '+' + xpStr + ' XP · Level ' + level
+      '+' + xpStr + ' XP · Level ' + level + (lvTitle ? ' — ' + lvTitle : '')
     ].join(NL);
   } else {
     summary = [
-      '👁️ Grot\'s Report — ' + name + ', Week ' + weekNum,
+      '👾 Grot\'s Report — ' + name + ', Week ' + weekNum,
       'Completed: ' + tStr + (questsDone ? qStr : ''),
-      '+' + xpStr + ' XP · Level ' + level,
+      '+' + xpStr + ' XP · Level ' + level + (lvTitle ? ' — ' + lvTitle : ''),
       'Grot is ' + (tasksDone > 5 ? '... satisfied.' : 'watching.')
     ].join(NL);
   }
@@ -1648,15 +1649,21 @@ function openGrotGallery() {
   grid.innerHTML = GROT_TIERS.map((src, idx) => {
     const isCurrent = idx === currentIdx;
     const lv = tierLevels[idx];
-    const border = isCurrent
-      ? '2.5px solid #F46800;box-shadow:0 0 14px rgba(244,104,0,.55)'
-      : '1.5px solid rgba(255,255,255,.1)';
+    const bdrColor = isCurrent ? '#F46800' : 'rgba(255,255,255,.1)';
+    const bdrWidth = isCurrent ? '2.5px' : '1.5px';
+    const shadow   = isCurrent ? 'box-shadow:0 0 14px rgba(244,104,0,.55);' : '';
+    // padding-bottom:100% trick guarantees perfect square in WKWebView
     return `<div style="text-align:center;">
-      <div style="width:100%;aspect-ratio:1;background:#0d0e12;border-radius:10px;border:${border};display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;">
-        <img src="${src}" style="width:88%;height:88%;object-fit:contain;display:block;">
-        ${isCurrent ? '<div style="position:absolute;top:4px;left:50%;transform:translateX(-50%);background:#F46800;color:#000;font-size:.5rem;font-weight:700;padding:2px 5px;border-radius:10px;white-space:nowrap;z-index:2;">YOU ARE HERE</div>' : ''}
+      <div style="position:relative;width:100%;padding-bottom:100%;border-radius:10px;
+           border:${bdrWidth} solid ${bdrColor};${shadow}background:#0d0e12;overflow:hidden;">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;
+             justify-content:center;">
+          <img src="${src}" style="width:82%;height:82%;object-fit:contain;display:block;
+               flex-shrink:0;">
+          ${isCurrent ? '<div style="position:absolute;top:4px;left:50%;transform:translateX(-50%);background:#F46800;color:#000;font-size:.48rem;font-weight:700;padding:2px 5px;border-radius:10px;white-space:nowrap;z-index:2;">YOU ARE HERE</div>' : ''}
+        </div>
       </div>
-      <div style="font-size:.62rem;color:${isCurrent ? '#F46800' : 'var(--text-muted)'};margin-top:4px;font-weight:${isCurrent ? '700' : '400'};">Lv ${lv}+</div>
+      <div style="font-size:.6rem;color:${isCurrent ? '#F46800' : 'var(--text-muted)'};margin-top:4px;font-weight:${isCurrent ? '700' : '400'};">Lv ${lv}+</div>
     </div>`;
   }).join('');
 }
@@ -2207,6 +2214,7 @@ function pickPhrase(phrase) {
       <button onclick="closeGrotGallery()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:var(--text-muted);border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
     <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 18px;">Every form Grot takes across 100 levels. Your current Grot is highlighted.</p>
+    <p style="font-size:.72rem;color:var(--text-muted);margin:0 0 14px;opacity:.65;">🎨 Characters made with <a id="build-a-grot-link" href="#" target="_blank" style="color:var(--orange);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Build-a-Grot</a> by Ward — <a href="https://www.grafanalabs.com" target="_blank" id="grot-grafana-link" style="color:var(--orange);opacity:.7;text-decoration:none;">Grafana Labs</a></p>
     <div id="grot-gallery-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;"></div>
   </div>
 </div>
